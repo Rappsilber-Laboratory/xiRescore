@@ -137,13 +137,14 @@ class DBConnector:
                                  only_top_ranking=False,
                                  only_pairs=False,
                                  spectrum_ids=None,
-                                 ):
+                                 sample: int = None):
         resultmatch_df = self._get_spectrum_result_match_df(
             search_ids=search_ids,
             resultset_ids=resultset_ids,
             only_top_ranking=only_top_ranking,
             only_pairs=only_pairs,
             spectrum_ids=spectrum_ids,
+            sample=sample,
         )
 
         score_names = self._get_score_names(
@@ -285,7 +286,8 @@ class DBConnector:
                                       resultset_ids: list,
                                       only_top_ranking=False,
                                       only_pairs=False,
-                                      spectrum_ids: list = None):
+                                      spectrum_ids: list = None,
+                                      sample: int = None):
         self.logger.debug('Fetch matchedspectrum, match, resultmatch tables joined')
         with self.engine.connect() as conn:
             # Spectrum subquery
@@ -337,9 +339,12 @@ class DBConnector:
             if only_top_ranking:
                 resultmatch_subq = resultmatch_subq.where(
                     self.tables['resultmatch'].c.top_ranking
-                ).alias('resultmatch_subq')
-            else:
-                resultmatch_subq = resultmatch_subq.alias('resultmatch_subq')
+                )
+            if sample is not None:
+                resultmatch_subq = resultmatch_subq.order_by(
+                    func.random()
+                ).limit(sample)
+            resultmatch_subq = resultmatch_subq.alias('resultmatch_subq')
 
             # Join subqueries
             joined_query = select(
@@ -436,7 +441,8 @@ class DBConnector:
                         resultset_ids: list[str],
                         only_top_ranking=False,
                         only_pairs=False,
-                        spectrum_ids=None) -> pd.DataFrame:
+                        spectrum_ids=None,
+                        sample: int = None) -> pd.DataFrame:
         search_ids, resultset_ids = self._get_search_resset_ids(resultset_ids=resultset_ids)
         df = self._get_full_resultmatch_df(
             search_ids=search_ids,
@@ -444,6 +450,7 @@ class DBConnector:
             only_top_ranking=only_top_ranking,
             only_pairs=only_pairs,
             spectrum_ids=spectrum_ids,
+            sample=sample
         )
         return self._serialize_columns(df)
 
