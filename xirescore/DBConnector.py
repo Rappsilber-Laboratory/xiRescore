@@ -10,13 +10,9 @@ from sqlalchemy import (
     Table as SATable,
     func,
     cast,
-    Integer,
     String,
-    func,
 )
 import io
-from sqlalchemy.sql import expression
-from sqlalchemy.orm import aliased
 import psycopg2
 import pandas as pd
 import numpy as np
@@ -118,8 +114,8 @@ class DBConnector:
             else:
                 select_cols = [
                     col
-                    for col in self.tables['resultmatch'].c
-                    if col in select_cols
+                    for name, col in self.tables['resultmatch'].c.items()
+                    if name in select_cols
                 ]
             # Construct query
             resultmatch_query = select(
@@ -144,9 +140,10 @@ class DBConnector:
                                  ):
         resultmatch_df = self._get_spectrum_result_match_df(
             search_ids=search_ids,
+            resultset_ids=resultset_ids,
             only_top_ranking=only_top_ranking,
             only_pairs=only_pairs,
-            spectrum_ids=spectrum_ids
+            spectrum_ids=spectrum_ids,
         )
 
         score_names = self._get_score_names(
@@ -315,7 +312,7 @@ class DBConnector:
             # Match subquery
             match_subq = select(
                 [
-                    c for c in self.tables['match'].c if c != 'id'
+                    c for name, c in self.tables['match'].c.items() if name != 'id'
                 ],
                 self.tables['match'].c.id.label('match_id')
             ).where(
@@ -460,7 +457,7 @@ class DBConnector:
         resultset_id = ('f'*len_leading_f)+timestamp+random_hex
         return resultset_id
 
-    def write_resultset(self, df, feature_cols=[], main_score_idx=0, config=''):
+    def write_resultset(self, df, feature_cols, main_score_idx=0, config=''):
         tables = self._get_tables()
         resultset_id = self._get_tailing_uuid()
         self.logger.info(f"Resultset ID: {resultset_id}")
@@ -516,7 +513,7 @@ class DBConnector:
 
         return uuid.UUID(resultset_id)
 
-    def write_resultmatches(self, df, resultset_id, feature_cols=[]):
+    def write_resultmatches(self, df, resultset_id, feature_cols):
         rm_columns = [
             c.name for c in self.meta.tables['resultmatch'].c
         ]
