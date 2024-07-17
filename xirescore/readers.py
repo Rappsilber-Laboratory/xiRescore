@@ -1,20 +1,57 @@
 import pandas as pd
-import DBConnector
+from DBConnector import DBConnector
+
+
+def read_spectra_ids(path, spectra_cols=None):
+    file_type = get_source_type(path)
+
+    if file_type != 'db' and spectra_cols is None:
+        raise ValueError('Filetype {file_type} requires parameter `spectra_cols`!')
+
+    if file_type == 'csv':
+        return pd.read_csv(path, usecols=spectra_cols)\
+            .loc[:, spectra_cols]\
+            .drop_duplicates() \
+            .to_records(index=False)
+    if file_type == 'tsv':
+        return pd.read_csv(path, sep='\t', usecols=spectra_cols)\
+            .loc[:, spectra_cols]\
+            .drop_duplicates() \
+            .to_records(index=False)
+    if file_type == 'parquet':
+        return pd.read_parquet(path, columns=spectra_cols)\
+            .loc[:, spectra_cols]\
+            .drop_duplicates() \
+            .to_records(index=False)
+    if file_type == 'db':
+        db_user, db_pass, db_host, db_port, db_db, rs_ids = parse_db_path(path)
+        db = DBConnector(db_user, db_pass, db_host, db_port, db_db)
+        return db.read_spectrum_ids(resultset_ids=rs_ids)\
+            .loc[:, ['spectrum_id']]\
+            .drop_duplicates() \
+            .to_records(index=False)
+
 
 def read_spectra(path: str, spectra: list, spectra_cols: list):
-    file_type = get_source_type(path, spectra_cols=spectra_cols)
+    file_type = get_source_type(path)
     if file_type == 'csv':
         return read_spectra_csv(path, spectra, spectra_cols=spectra_cols)
     if file_type == 'tsv':
         return read_spectra_csv(path, spectra, sep='\t', spectra_cols=spectra_cols)
     if file_type == 'db':
-        return read_spectra_db(path, spectra, spectra_cols=spectra_cols)
+        return read_spectra_db(path, spectra)
     if file_type == 'parquet':
-        return read_spectra_parquet(path, spectra)
+        return read_spectra_parquet(path, spectra, spectra_cols=spectra_cols)
 
 
 def read_spectra_db(path, spectra: list):
-    pass
+    db_user, db_pass, db_host, db_port, db_db, rs_ids = parse_db_path(path)
+    db = DBConnector(db_user, db_pass, db_host, db_port, db_db)
+    return db.read_resultsets(
+        resultset_ids=rs_ids,
+        spectrum_ids=spectra,
+        only_pairs=True,
+    )
 
 
 def read_spectra_parquet(path, spectra: list, spectra_cols: list):

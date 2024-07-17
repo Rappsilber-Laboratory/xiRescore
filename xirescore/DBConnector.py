@@ -604,6 +604,26 @@ class DBConnector:
         df.columns = df.columns.map(str)
         return df
 
+    def read_spectrum_ids(self, resultset_ids):
+        search_ids, resultset_ids = self._get_search_resset_ids(resultset_ids=resultset_ids)
+
+        self.logger.debug('Fetch matchedspectrum table')
+        with self.engine.connect() as conn:
+            spectrum_query = select(
+                func.aggregate_strings(
+                    cast(self.tables['matchedspectrum'].c.spectrum_id, String),
+                    ';'
+                ).label('spectrum_id')
+            ).where(
+                self.tables['matchedspectrum'].c.search_id.in_(search_ids)
+            ).group_by(
+                self.tables['matchedspectrum'].c.match_id,
+                self.tables['matchedspectrum'].c.search_id,
+            )
+            res = conn.execute(spectrum_query).mappings().all()
+        df = pd.DataFrame(res)
+        return self._serialize_columns(df)
+
     def close(self):
         self.engine.dispose()
         self.psycopg.close()
