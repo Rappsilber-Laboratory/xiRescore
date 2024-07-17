@@ -108,12 +108,22 @@ class DBConnector:
             res = conn.execute(resultset_query).mappings().all()
         return pd.DataFrame(res)
 
-    def _get_resultmatch_df(self, search_ids, only_top_ranking=False,
-                            limit_top_score=None, limit_random=None) -> pd.DataFrame:
+    def _get_resultmatch_df(self, search_ids, only_top_ranking=False, select_cols: list = None) -> pd.DataFrame:
         self.logger.debug('Fetch resultmatch table')
         with self.engine.connect() as conn:
+            # Create column selection
+            if select_cols is None:
+                # Take all columns if unspecified
+                select_cols = self.tables['resultmatch']
+            else:
+                select_cols = [
+                    col
+                    for col in self.tables['resultmatch'].c
+                    if col in select_cols
+                ]
+            # Construct query
             resultmatch_query = select(
-                self.tables['resultmatch'],
+                select_cols,
             ).where(
                 self.tables['resultmatch'].c.search_id.in_(search_ids)
             )
@@ -121,48 +131,22 @@ class DBConnector:
                 resultmatch_query = resultmatch_query.where(
                     self.tables['resultmatch'].c.top_ranking
                 )
-
-            # Limit the top score and random samples
-            final_query = resultmatch_query
-            ids_top_score_query = None
-            if limit_top_score is not None:
-                # Get top score samples
-                ids_top_score_query = resultmatch_query.order_by(
-                    self.tables['resultmatch'].c.link_score
-                ).limit(limit_top_score)
-                final_query = ids_top_score_query
-            if limit_random is not None:
-                # Get random samples
-                ids_random_query = resultmatch_query.order_by(
-                    func.random()
-                ).limit(limit_top_score)
-                # Union if both limits are applied
-                if ids_top_score_query is not None:
-                    final_query = expression.union(
-                        ids_top_score_query,
-                        ids_random_query
-                    ).distinct()
-                else:
-                    final_query = ids_random_query
-            res = conn.execute(final_query).mappings().all()
+            # Execute query
+            res = conn.execute(resultmatch_query).mappings().all()
+        # Convert to DataFrame
         return pd.DataFrame(res)
 
-    def _get_full_resultmatch_df(self, search_ids, resultset_ids,
-                                 only_top_ranking=False, only_pairs=False,
-                                 slice_idx=None, n_slices=16,
-                                 limit_top_score=None, limit_random=None):
-        match_df = self._get_full_match_df(
-            search_ids=search_ids,
-            only_pairs=only_pairs,
-            slice_idx=slice_idx,
-            n_slices=n_slices,
-        )
-
-        resultmatch_df = self._get_resultmatch_df(
+    def _get_full_resultmatch_df(self, search_ids,
+                                 resultset_ids,
+                                 only_top_ranking=False,
+                                 only_pairs=False,
+                                 spectrum_ids=None,
+                                 ):
+        resultmatch_df = self._get_spectrum_result_match_df(
             search_ids=search_ids,
             only_top_ranking=only_top_ranking,
-            limit_top_score=limit_top_score,
-            limit_random=limit_random
+            only_pairs=only_pairs,
+            spectrum_ids=spectrum_ids
         )
 
         score_names = self._get_score_names(
@@ -207,11 +191,6 @@ class DBConnector:
         resultset_df = self._get_resultset_df(resultset_ids)
 
         resultmatch_full_df = resultmatch_scores_df.merge(
-            match_df,
-            on=['search_id', 'match_id'],
-            suffixes=('', '_match'),
-            validate='m:1',
-        ).merge(
             resultset_df,
             on=['resultset_id'],
             suffixes=('', '_resultset'),
@@ -301,14 +280,90 @@ class DBConnector:
             ).where(
                 self.tables['matchedspectrum'].c.search_id.in_(search_ids)
             )
-            if slice_idx is not None:
-                ids_query = self._uuid_slice_filter(
-                    ids_query,
-                    self.tables['matchedspectrum'].c.spectrum_id,
-                    slice_idx,
-                    n_slices,
-                )
             res = conn.execute(ids_query).mappings().all()
+        return pd.DataFrame(res)
+
+    def _get_spectrum_result_match_df(self,
+                                      search_ids: list,
+                                      resultset_ids: list,
+                                      only_top_ranking=False,
+                                      only_pairs=False,
+                                      spectrum_ids: list = None):
+        self.logger.debug('Fetch matchedspectrum, match, resultmatch tables joined')
+        with self.engine.connect() as conn:
+            # Spectrum subquery
+            spectrum_agg = select(
+                func.aggregate_strings(
+                    self.tables['matchedspectrum'].c.spectrum_id,
+                    ';'
+                ).label('spectrum_id'),
+                self.tables['matchedspectrum'].c.search_id,
+            ).where(
+                self.tables['matchedspectrum'].c.search_id.in_(search_ids)
+            ).group_by(
+                self.tables['matchedspectrum'].c.match_id,
+                self.tables['matchedspectrum'].c.search_id,
+            ).alias('spectrum_agg')
+
+            if spectrum_ids is None:
+                spectrum_subq = spectrum_agg
+            else:
+                spectrum_subq = select(spectrum_agg).where(
+                    spectrum_agg.c.spectrum_id.in_(spectrum_ids)
+                ).alias('spectrum_subq')
+
+            # Match subquery
+            match_subq = select(
+                [
+                    c for c in self.tables['match'].c if c != 'id'
+                ],
+                self.tables['match'].c.id.label('match_id')
+            ).where(
+                self.tables['match'].c.search_id.in_(search_ids)
+            ).alias('match_subq')
+            if only_pairs:
+                match_subq = match_subq.where(
+                    self.tables['match'].c.pep2_id.isnot(None)
+                )
+            match_subq = match_subq.alias('match_subq')
+
+            # Resultmatch subquery
+            resultmatch_subq = select(
+                self.tables['resultmatch'],
+            ).where(
+                and_(
+                    self.tables['resultmatch'].c.search_id.in_(search_ids),
+                    self.tables['resultmatch'].c.resultset_id.in_(resultset_ids),
+                )
+            )
+            if only_top_ranking:
+                resultmatch_subq = resultmatch_subq.where(
+                    self.tables['resultmatch'].c.top_ranking
+                ).alias('resultmatch_subq')
+            else:
+                resultmatch_subq = resultmatch_subq.alias('resultmatch_subq')
+
+            # Join subqueries
+            joined_query = select(
+                spectrum_subq,
+                match_subq,
+                resultmatch_subq,
+            ).join_from(
+                spectrum_subq,
+                match_subq,
+                and_(
+                    spectrum_subq.c.match_id == match_subq.c.match_id,
+                    spectrum_subq.c.search_id == match_subq.c.search_id,
+                )
+            ).join_from(
+                match_subq,
+                resultmatch_subq,
+                and_(
+                    match_subq.c.match_id == resultmatch_subq.c.match_id,
+                    match_subq.c.search_id == resultmatch_subq.c.search_id,
+                )
+            )
+            res = conn.execute(joined_query).mappings().all()
         return pd.DataFrame(res)
 
     def _uuid_slice_filter(self, query, column, slice_idx, n_slices):
@@ -379,69 +434,18 @@ class DBConnector:
 
         return full_df
 
-    def _get_full_match_df(self, search_ids, only_pairs=False, slice_idx=None, n_slices=16) -> pd.DataFrame:
-        self.logger.debug('Get full match DF')
-        match_df = self._get_match_df(search_ids=search_ids, only_pairs=only_pairs)
-        matchedspectrum_df = self._get_matchedspectrum_df(
-            search_ids=search_ids,
-            slice_idx=slice_idx,
-            n_slices=n_slices,
-        )
-
-        peptide_df = self._get_peptide_protein_df(
-            search_ids=search_ids
-        )
-
-        match_spec_df = match_df.merge(
-            matchedspectrum_df,
-            on=['match_id', 'search_id'],
-            suffixes=('', '_spectrum'),
-            validate='1:m',
-        ).groupby(match_df.columns.to_list()).agg(
-            spectrum_id=pd.NamedAgg(
-                'spectrum_id',
-                lambda x: ';'.join(np.array(x).astype(str))
-            )
-        ).reset_index()
-
-        match_spec_df = match_spec_df.merge(
-            peptide_df.rename({
-                    c: f'{c}_p1' for c in peptide_df.columns if not c.endswith('_id')
-            }, axis=1),
-            left_on=['search_id', 'pep1_id'],
-            right_on=['search_id', 'peptide_id'],
-            suffixes=('', '_dup'),
-            validate='m:1',
-        ).merge(
-            peptide_df.rename({
-                c: f'{c}_p2' for c in peptide_df.columns if not c.endswith('_id')
-            }, axis=1),
-            left_on=['search_id', 'pep2_id'],
-            right_on=['search_id', 'peptide_id'],
-            suffixes=('', '_dup'),
-            validate='m:1',
-        )
-
-        return match_spec_df
-
     def read_resultsets(self,
                         resultset_ids: list[str],
                         only_top_ranking=False,
                         only_pairs=False,
-                        slice_idx=None,
-                        n_slices=16,
-                        limit_top_score=None,
-                        limit_random=None) -> pd.DataFrame:
+                        spectrum_ids=None) -> pd.DataFrame:
         search_ids, resultset_ids = self._get_search_resset_ids(resultset_ids=resultset_ids)
         df = self._get_full_resultmatch_df(
             search_ids=search_ids,
             resultset_ids=resultset_ids,
             only_top_ranking=only_top_ranking,
             only_pairs=only_pairs,
-            slice_idx=slice_idx,
-            n_slices=n_slices,
-            limit_top_score=limit_top_score,
-            limit_random=limit_random
+            spectrum_ids=spectrum_ids,
         )
         return self._serialize_columns(df)
 
