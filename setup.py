@@ -10,7 +10,41 @@ with open('README.rst') as readme_file:
 with open('HISTORY.rst') as history_file:
     history = history_file.read()
 
-requirements = [ ]
+requirements = [
+    "frosch~=0.1.9",
+    "pandas~=2.0.1",
+    "numpy~=1.24.3",
+    "PyYAML~=6.0",
+    "tabulate~=0.9.0",
+    "setuptools~=65.5.1",
+    "numpy-indexed~=0.3.7",
+    "scikit-learn~=1.3.0",
+    "joblib~=1.2.0",
+    "xgboost~=1.7.5",
+    "tqdm~=4.66.0",
+    "hyperopt~=0.2.7",
+    "lightgbm~=3.3.5",  # Check the pre-requirements https://pypi.org/project/lightgbm/
+    "pyteomics~=4.6",
+    "matplotlib~=3.7.1",
+    "seaborn~=0.12.2",
+    "imblearn~=0.0",
+    "JPype1~=1.4.1",
+    "XlsxWriter~=3.1.0",
+    "pytest~=7.3.1",
+    "pydocstyle~=6.3.0",
+    "pytest-cov~=4.0.0",
+    "pytest-flake8~=1.0.6",
+    "pytest-pydocstyle~=2.3.2",
+    "py~=1.11.0",
+    "flake8==4.0.1",
+    "networkx~=3.1",
+    "pyspark~=3.5.0",
+    "pyspark[sql]~=3.5.0",
+    "multiprocess~=0.70.15",
+    "deepmerge~=1.1.0",
+    "SQLAlchemy~=2.0.30",
+    "psycopg2>=2.9",
+]
 
 test_requirements = ['pytest>=3', ]
 
@@ -27,6 +61,7 @@ setup(
         'Programming Language :: Python :: 3.6',
         'Programming Language :: Python :: 3.7',
         'Programming Language :: Python :: 3.8',
+        'Programming Language :: Python :: 3.10',
     ],
     description="A machine learning based approach to rescore crosslinked spectrum matches (CSMs).",
     entry_points={
