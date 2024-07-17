@@ -5,7 +5,7 @@
 import pytest
 
 
-from xirescore import xirescore
+from xirescore import XiRescore
 
 
 @pytest.fixture

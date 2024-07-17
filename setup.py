@@ -44,6 +44,7 @@ requirements = [
     "deepmerge~=1.1.0",
     "SQLAlchemy~=2.0.30",
     "psycopg2>=2.9",
+    "python-logging-loki",
 ]
 
 test_requirements = ['pytest>=3', ]
