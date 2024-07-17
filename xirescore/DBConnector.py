@@ -119,7 +119,7 @@ class DBConnector:
                 ]
             # Construct query
             resultmatch_query = select(
-                select_cols,
+                *select_cols,
             ).where(
                 self.tables['resultmatch'].c.search_id.in_(search_ids)
             )
@@ -291,10 +291,11 @@ class DBConnector:
             # Spectrum subquery
             spectrum_agg = select(
                 func.aggregate_strings(
-                    self.tables['matchedspectrum'].c.spectrum_id,
+                    cast(self.tables['matchedspectrum'].c.spectrum_id, String),
                     ';'
                 ).label('spectrum_id'),
                 self.tables['matchedspectrum'].c.search_id,
+                self.tables['matchedspectrum'].c.match_id,
             ).where(
                 self.tables['matchedspectrum'].c.search_id.in_(search_ids)
             ).group_by(
@@ -311,7 +312,7 @@ class DBConnector:
 
             # Match subquery
             match_subq = select(
-                [
+                *[
                     c for name, c in self.tables['match'].c.items() if name != 'id'
                 ],
                 self.tables['match'].c.id.label('match_id')
