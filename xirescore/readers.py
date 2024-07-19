@@ -1,6 +1,9 @@
 import pandas as pd
 from DBConnector import DBConnector
-
+from collections.abc import Sequence
+from fastparquet import ParquetFile as FPParquetFile
+from pyarrow.parquet import ParquetFile as PAParquetFile
+from math import ceil
 
 def read_spectra_ids(path, spectra_cols=None):
     file_type = get_source_type(path)
@@ -32,7 +35,7 @@ def read_spectra_ids(path, spectra_cols=None):
             .to_records(index=False)
 
 
-def read_spectra(path: str, spectra: list, spectra_cols: list):
+def read_spectra(path: str, spectra: Sequence[Sequence], spectra_cols: Sequence):
     file_type = get_source_type(path)
     if file_type == 'csv':
         return read_spectra_csv(path, spectra, spectra_cols=spectra_cols)
@@ -44,53 +47,43 @@ def read_spectra(path: str, spectra: list, spectra_cols: list):
         return read_spectra_parquet(path, spectra, spectra_cols=spectra_cols)
 
 
-def read_spectra_db(path, spectra: list):
+def read_spectra_db(path, spectra: Sequence[Sequence]):
     db_user, db_pass, db_host, db_port, db_db, rs_ids = parse_db_path(path)
     db = DBConnector(db_user, db_pass, db_host, db_port, db_db)
     return db.read_resultsets(
         resultset_ids=rs_ids,
-        spectrum_ids=spectra,
+        spectrum_ids=[
+            s[0] for s in spectra
+        ],
         only_pairs=True,
     )
 
 
-def read_spectra_parquet(path, spectra: list, spectra_cols: list):
-    if len(spectra_cols) == 1:
-        # Filters for a single spectrum column
-        spectra_col = spectra_cols[0]
-        filters = [
-            [(spectra_col, 'in', spectrum)]
-            for spectrum in spectra
+def read_spectra_parquet(path, spectra: Sequence[Sequence], spectra_cols: list):
+    # Filters for spectrum columns
+    filters = [
+        [
+            (spectra_col, 'in', spectrum[col_i])
+            for col_i, spectra_col in enumerate(spectra_cols)
         ]
-    else:
-        # Filters for multiple spectrum columns
-        filters = [
-            [
-                (spectra_col, 'in', spectrum[col_i])
-                for col_i, spectra_col in enumerate(spectra_cols)
-            ]
-            for spectrum in spectra
-        ]
+        for spectrum in spectra
+    ]
 
     df = pd.read_parquet(path, filters=filters)
     return df
 
 
-def read_spectra_csv(path, spectra: list, spectra_cols: list, sep=',', chunksize=500_000):
+def read_spectra_csv(path, spectra: Sequence[Sequence], spectra_cols: Sequence, sep=',', chunksize=500_000):
     # Initialize result DataFrame
     res_df = pd.DataFrame()
     for df in pd.read_csv(path, sep=sep, chunksize=chunksize):
         filters = False
         # Generate filters for the requested spectra
         for spectrum in spectra:
-            if len(spectra_cols) == 1:
-                spectra_col = spectra_cols[0]
-                filters |= df[spectra_col] == spectrum
-            else:
-                sub_filter = True
-                for col_i, spectra_col in enumerate(spectra_cols):
-                    sub_filter &= df[spectra_col] == spectrum[col_i]
-                filters |= sub_filter
+            sub_filter = True
+            for col_i, spectra_col in enumerate(spectra_cols):
+                sub_filter &= df[spectra_col] == spectrum[col_i]
+            filters |= sub_filter
         # Append filtered chunk
         res_df = pd.concat(
             [
@@ -127,3 +120,64 @@ def parse_db_path(path):
     db_user, db_pass = db_auth.split(':', maxsplit=1)
     db_host, db_port = db_tcp.split(':', maxsplit=1)
     return db_user, db_pass, db_host, db_port, db_db, rs_ids
+
+
+def read_top_sample(path, sample=1_000_000):
+    file_type = get_source_type(path)
+    if file_type == 'csv':
+        return read_top_sample_csv(path, sample=sample)
+    if file_type == 'tsv':
+        return read_top_sample_csv(path, sep='\t', sample=sample)
+    if file_type == 'db':
+        db_user, db_pass, db_host, db_port, db_db, rs_ids = parse_db_path(path)
+        db = DBConnector(db_user, db_pass, db_host, db_port, db_db)
+        return db.read_resultsets(
+            resultset_ids=rs_ids,
+            only_pairs=True,
+            only_top_ranking=True,
+            sample=sample,
+        )
+    if file_type == 'parquet':
+        return read_top_sample_parquet(path, sample=sample)
+
+
+def read_top_sample_parquet(path, sample, top_ranking_col='top_ranking', random_state=0):
+    n_row_groups = PAParquetFile(path).num_row_groups()
+    parquet_file = FPParquetFile(path)
+    res_df = pd.DataFrame()
+    filters = [[(top_ranking_col, '==', True)]]
+    for df in parquet_file.iter_row_groups(filters=filters):
+        df: pd.DataFrame
+        n_group_samples = min(
+            sample/n_row_groups,
+            len(df)
+        )
+        res_df = pd.concat(
+            [
+                res_df,
+                df.sample(n_group_samples, random_state=random_state)
+            ]
+        )
+    return res_df
+
+
+def read_top_sample_csv(path, sample, sep=',', chunksize=5_000_000, top_ranking_col='top_ranking', random_state=0):
+    n_rows = sum(1 for i in open(path, 'rb'))
+    n_chunks = ceil(n_rows/sample)
+    res_df = pd.DataFrame()
+    for i_chunk, df in enumerate(pd.read_csv(path, sep=sep, chunksize=chunksize)):
+        df = df[
+            df[top_ranking_col]
+        ]
+        res_df = pd.concat([
+            res_df,
+            df
+        ])
+        # How much of the chunks have been processed? (+1 to be safe)
+        prop_chunks = (i_chunk+1)/n_chunks
+        subsample_size = min(
+            len(res_df),
+            sample*prop_chunks,
+        )
+        res_df = res_df.sample(subsample_size, random_state=random_state)
+    return res_df.sample(subsample_size, random_state=random_state)
