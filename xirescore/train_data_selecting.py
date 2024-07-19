@@ -4,6 +4,7 @@ from bi_fdr import self_or_between_mp, calculate_bi_fdr
 import logging
 import numpy as np
 
+
 def select(input_data, options, logger):
     if logger is None:
         logging.basicConfig(
