@@ -45,6 +45,8 @@ requirements = [
     "SQLAlchemy~=2.0.30",
     "psycopg2>=2.9",
     "python-logging-loki",
+    "fastparquet=2024.5.0",
+    "pyarrow=16.0.0",
 ]
 
 test_requirements = ['pytest>=3', ]
