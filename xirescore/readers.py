@@ -142,7 +142,7 @@ def read_top_sample(path, sample=1_000_000):
 
 
 def read_top_sample_parquet(path, sample, top_ranking_col='top_ranking', random_state=0):
-    n_row_groups = PAParquetFile(path).num_row_groups()
+    n_row_groups = PAParquetFile(path).num_row_groups
     parquet_file = FPParquetFile(path)
     res_df = pd.DataFrame()
     filters = [[(top_ranking_col, '==', True)]]
