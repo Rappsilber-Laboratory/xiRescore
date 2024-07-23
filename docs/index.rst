@@ -8,7 +8,6 @@ Welcome to xiRescore's documentation!
    readme
    installation
    usage
-   modules
    contributing
    history
 
