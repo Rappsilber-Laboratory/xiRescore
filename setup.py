@@ -47,6 +47,7 @@ requirements = [
     "python-logging-loki",
     "fastparquet=2024.5.0",
     "pyarrow=16.0.0",
+    "scipy~=1.13.0",
 ]
 
 test_requirements = ['pytest>=3', ]

@@ -3,12 +3,13 @@ from typing import Callable
 from sklearn.model_selection import ParameterGrid
 import importlib
 import multiprocess as mp
-import NoOverlapKFold
+from NoOverlapKFold import NoOverlapKFold
 import logging
 import numpy as np
 from sklearn.base import ClassifierMixin
 from functools import partial
-import async_result_resolver
+import async_result_resolving
+import sklearn
 from sklearn.metrics import accuracy_score, balanced_accuracy_score
 
 
@@ -86,19 +87,20 @@ def train(train_df, cols_features, clf_params, options,
             # Add job to the
             fold_clfs.append(fold_clf)
         # Resolve (potentially) async results
-        clfs = async_result_resolver.resolve(fold_clfs, logger=logger)
-    return clfs
+        clfs = async_result_resolving.resolve(fold_clfs, logger=logger)
+    return clfs, splits
 
 
 def train_fold(features_df, labels_df, fold, params, options, logger: logging.Logger):
     # Import classifier model
     model_class = options['rescoring']['model_class']
     model_name = options['rescoring']['model_name']
-    model: ClassifierMixin = importlib.import_module(f"sklearn.{model_class}.{model_name}")
+    model_module = importlib.import_module(f"sklearn.{model_class}")
+    model: ClassifierMixin.__class__ = getattr(model_module, model_name)
 
     # Import metric function
     metric_name = options['rescoring']['metric_name']
-    metric: Callable = importlib.import_module(f"sklearn.metrics.{metric_name}")
+    metric: Callable = getattr(sklearn.metrics, metric_name)
 
     # Unpack fold
     train_idx, test_idx = fold

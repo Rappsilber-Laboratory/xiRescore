@@ -43,17 +43,18 @@ class DBConnector:
                  username: str,
                  password: str,
                  database: str,
-                 logger:logging.Logger=None):
+                 logger: logging.Logger = None):
         if logger is None:
             logging.basicConfig(
                 level=logging.DEBUG,
                 format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
             )
             self.logger = logging.getLogger(__name__)
+            self.logger.setLevel(logging.DEBUG)
         else:
             self.logger = logger.getChild(__name__)
         self.engine = create_engine(
-            f"postgresql://{username}:{password}@{hostname}:{port}/{database}"
+            f"postgresql://{username}:{password}@{hostname}:{int(port)}/{database}"
         )
         self.psycopg = psycopg2.connect(
             host=hostname,
@@ -64,6 +65,7 @@ class DBConnector:
         )
         self.meta = MetaData()
         self.tables = dict()
+        self.last_resultset_id_written = None
         for tbl_name in _TABLES:
             self.tables[tbl_name] = Table(
                 tbl_name, self.meta,
@@ -137,6 +139,7 @@ class DBConnector:
                                  only_top_ranking=False,
                                  only_pairs=False,
                                  spectrum_ids=None,
+                                 matchedspec_where=None,
                                  sample: int = None):
         resultmatch_df = self._get_spectrum_result_match_df(
             search_ids=search_ids,
@@ -144,6 +147,7 @@ class DBConnector:
             only_top_ranking=only_top_ranking,
             only_pairs=only_pairs,
             spectrum_ids=spectrum_ids,
+            matchedspec_where=matchedspec_where,
             sample=sample,
         )
 
@@ -270,7 +274,7 @@ class DBConnector:
             res = conn.execute(ids_query).mappings().all()
         return pd.DataFrame(res)
 
-    def _get_matchedspectrum_df(self, search_ids, slice_idx=None, n_slices=16) -> pd.DataFrame:
+    def _get_matchedspectrum_df(self, search_ids) -> pd.DataFrame:
         self.logger.debug('Fetch matchedspectrum table')
         with self.engine.connect() as conn:
             ids_query = select(
@@ -286,12 +290,14 @@ class DBConnector:
                                       resultset_ids: list,
                                       only_top_ranking=False,
                                       only_pairs=False,
+                                      matchedspec_where=None,
                                       spectrum_ids: list = None,
-                                      sample: int = None):
+                                      sample: int = None,
+                                      rs_oversample: int = 3):
         self.logger.debug('Fetch matchedspectrum, match, resultmatch tables joined')
         with self.engine.connect() as conn:
-            # Spectrum subquery
-            spectrum_agg = select(
+            # Spectrum pre-subquery
+            spectrum_preq = select(
                 func.aggregate_strings(
                     cast(self.tables['matchedspectrum'].c.spectrum_id, String),
                     ';'
@@ -300,17 +306,27 @@ class DBConnector:
                 self.tables['matchedspectrum'].c.match_id,
             ).where(
                 self.tables['matchedspectrum'].c.search_id.in_(search_ids)
-            ).group_by(
+            )
+
+            # Add optional where
+            if matchedspec_where is not None:
+                spectrum_preq = spectrum_preq.where(
+                    matchedspec_where
+                )
+
+            # Select spectra IDs
+            if spectrum_ids is not None:
+                spectrum_preq = spectrum_preq.where(
+                    spectrum_preq.c.spectrum_id.in_(spectrum_ids)
+                )
+
+            # Add grouping
+            spectrum_agg = spectrum_preq.group_by(
                 self.tables['matchedspectrum'].c.match_id,
                 self.tables['matchedspectrum'].c.search_id,
-            ).alias('spectrum_agg')
+            )
 
-            if spectrum_ids is None:
-                spectrum_subq = spectrum_agg
-            else:
-                spectrum_subq = select(spectrum_agg).where(
-                    spectrum_agg.c.spectrum_id.in_(spectrum_ids)
-                ).alias('spectrum_subq')
+            spectrum_subq = spectrum_agg.alias('spectrum_subq')
 
             # Match subquery
             match_subq = select(
@@ -320,7 +336,7 @@ class DBConnector:
                 self.tables['match'].c.id.label('match_id')
             ).where(
                 self.tables['match'].c.search_id.in_(search_ids)
-            ).alias('match_subq')
+            )
             if only_pairs:
                 match_subq = match_subq.where(
                     self.tables['match'].c.pep2_id.isnot(None)
@@ -343,7 +359,7 @@ class DBConnector:
             if sample is not None:
                 resultmatch_subq = resultmatch_subq.order_by(
                     func.random()
-                ).limit(sample)
+                ).limit(sample*rs_oversample)  # Oversample for linear filter
             resultmatch_subq = resultmatch_subq.alias('resultmatch_subq')
 
             # Join subqueries
@@ -366,6 +382,8 @@ class DBConnector:
                     match_subq.c.search_id == resultmatch_subq.c.search_id,
                 )
             )
+            if sample is not None:
+                joined_query = joined_query.limit(sample)
             res = conn.execute(joined_query).mappings().all()
         return pd.DataFrame(res)
 
@@ -386,7 +404,7 @@ class DBConnector:
             )
         else:
             query = query.where(
-                column <= 'f'*32
+                column <= 'f' * 32
             )
         return query
 
@@ -454,20 +472,46 @@ class DBConnector:
         )
         return self._serialize_columns(df)
 
+    def read_spectra_range(self,
+                           resultset_ids: list[str],
+                           spectra_from,
+                           spectra_to,
+                           only_top_ranking=False,
+                           only_pairs=False,
+                           sample: int = None) -> pd.DataFrame:
+        search_ids, resultset_ids = self._get_search_resset_ids(resultset_ids=resultset_ids)
+        # Construct optional filter
+        matchedspec_where = (
+            (self.tables['matchedspectrum'].c.spectrum_id >= spectra_from) &
+            (self.tables['matchedspectrum'].c.spectrum_id >= spectra_to)
+        )
+        # Get filtered resultsets
+        df = self._get_full_resultmatch_df(
+            search_ids=search_ids,
+            resultset_ids=resultset_ids,
+            only_top_ranking=only_top_ranking,
+            only_pairs=only_pairs,
+            matchedspec_where=matchedspec_where,
+            sample=sample
+        )
+        return self._serialize_columns(df)
+
     def _get_tailing_uuid(self, len_timestamp=10, len_leading_f=4):
         timestamp = hex(
             int(
                 datetime.now().timestamp()
             )
         )[2:].zfill(len_timestamp)
-        len_rand = 32-len_timestamp-len_leading_f
+        len_rand = 32 - len_timestamp - len_leading_f
         random_hex = ''.join(random.choice('0123456789abcdef') for _ in range(len_rand))
-        resultset_id = ('f'*len_leading_f)+timestamp+random_hex
+        resultset_id = ('f' * len_leading_f) + timestamp + random_hex
         return resultset_id
 
-    def write_resultset(self, df, feature_cols, main_score_idx=0, config=''):
+    def write_resultset(self, df, feature_cols, resultset_id=None, main_score_idx=0, config=''):
         tables = self._get_tables()
-        resultset_id = self._get_tailing_uuid()
+        if resultset_id is None:
+            resultset_id = self._get_tailing_uuid()
+            self.last_resultset_id_written = resultset_id
         self.logger.info(f"Resultset ID: {resultset_id}")
 
         df['source_resultset_id'] = df['resultset_id']
@@ -537,9 +581,9 @@ class DBConnector:
         for c in ['scores']:
             rm_df[c] = rm_df[c].apply(
                 lambda x:
-                    '{' +
-                    ','.join(np.array(x).astype(str)) +
-                    '}'
+                '{' +
+                ','.join(np.array(x).astype(str)) +
+                '}'
             )
         rm_df = rm_df.loc[:, rm_columns]
 
