@@ -143,6 +143,7 @@ class XiRescore:
         return features
 
     def rescore(self, df=None, spectra_batch_size=100_000):
+        self._logger.info('Start rescoring')
         cols_spectra = self._options['input']['columns']['spectrum_id']
         col_rescore = self._options['output']['columns']['rescore']
         if self._options['input']['columns']['csm_id'] is None:
@@ -164,6 +165,7 @@ class XiRescore:
 
         # Calculate number of batches
         n_batches = ceil(len(spectra)/spectra_batch_size)
+        self._logger.info(f'Using {n_batches} CPU cores for rescoring.')
 
         # Iterate over spectra batches
         df_rescored = pd.DataFrame()
@@ -174,6 +176,7 @@ class XiRescore:
             ]
             spectra_from = spectra_range[0]
             spectra_to = spectra_range[-1]
+            self._logger.info(f'Start rescoring spectra batch {i_batch} with `{spectra_from}` to `{spectra_to}`')
 
             # Read batch
             df_batch = readers.read_spectra_range(
@@ -189,7 +192,8 @@ class XiRescore:
                     self.models,
                     df=df_batch,
                     rescore_col=col_rescore,
-                    apply_logit=apply_logit
+                    apply_logit=apply_logit,
+                    logger=self._logger,
                 ),
                 left_index=True,
                 right_index=True,
