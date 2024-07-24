@@ -186,14 +186,16 @@ class XiRescore:
                 spectra_cols=cols_spectra
             )
 
+            # Get feature columns
+            feat_cols = self._get_features(df_batch)
+
             # Rescore batch
             df_batch = df_batch.merge(
                 rescoring.rescore(
                     self.models,
-                    df=df_batch,
+                    df=df_batch[feat_cols],
                     rescore_col=col_rescore,
-                    apply_logit=apply_logit,
-                    logger=self._logger,
+                    apply_logit=apply_logit
                 ),
                 left_index=True,
                 right_index=True,
