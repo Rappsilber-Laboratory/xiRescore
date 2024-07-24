@@ -57,7 +57,7 @@ def rescore(models, df, rescore_col, apply_logit=False, logger=logging.getLogger
     df_rescore = pd.DataFrame(index=df.index)
 
     # Fill result DF
-    for i_m in models:
+    for i_m, model in enumerate(models):
         n_res = len(async_results)
         rescores_m = rescore_results[i_m:n_res:n_models]
         df_rescore[f'{rescore_col}_{i_m}'] = np.concatenate(rescores_m)
