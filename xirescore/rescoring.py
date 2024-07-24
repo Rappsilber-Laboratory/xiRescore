@@ -4,13 +4,15 @@ import numpy as np
 import pandas as pd
 from xirescore import async_result_resolving
 import scipy
+import logging
 
 
-def rescore(models, df, rescore_col, apply_logit=False):
+def rescore(models, df, rescore_col, apply_logit=False, logger=logging.getLogger(__name__)):
     n_procs = int(mp.cpu_count() - 1)
     n_models = len(models)
     n_dataslices = ceil(n_procs/n_models)
     slice_size = len(df) / n_dataslices
+    logger.debug(f'Split {len(df)} samples in {n_dataslices} slices of {slice_size}')
 
     # Slice input data for multiprocessing
     dataslices = [
@@ -28,21 +30,21 @@ def rescore(models, df, rescore_col, apply_logit=False):
                     async_results.append(
                         pool.apply_async(
                             clf.decision_function,
-                            slice
+                            slice,
                         )
                     )
                 elif "tensorflow" not in str(clf):
                     async_results.append(
                         pool.apply_async(
                             clf.predict_proba,
-                            slice
+                            slice,
                         )
                     )
                 else:
                     async_results.append(
                         pool.apply_async(
                             clf.predict_proba,
-                            slice
+                            slice,
                         )
                     )
         rescore_results = np.array(async_result_resolving.resolve(async_results))
