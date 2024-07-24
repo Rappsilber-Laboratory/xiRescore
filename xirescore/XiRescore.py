@@ -165,7 +165,7 @@ class XiRescore:
 
         # Calculate number of batches
         n_batches = ceil(len(spectra)/spectra_batch_size)
-        self._logger.info(f'Using {n_batches} CPU cores for rescoring.')
+        self._logger.info(f'Rescore in {n_batches} batches')
 
         # Iterate over spectra batches
         df_rescored = pd.DataFrame()
