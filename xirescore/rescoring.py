@@ -49,7 +49,8 @@ def rescore(models, df, rescore_col, apply_logit=False, logger=logging.getLogger
                     )
 
         rescore_results = np.array([
-            res[:, 1] for res in async_result_resolving.resolve(async_results)
+            res[:, 1]  # Take prediction for class 1 (aka target)
+            for res in async_result_resolving.resolve(async_results)
         ])
 
     # Apply logit
