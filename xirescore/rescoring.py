@@ -30,21 +30,21 @@ def rescore(models, df, rescore_col, apply_logit=False, logger=logging.getLogger
                     async_results.append(
                         pool.apply_async(
                             clf.decision_function,
-                            slice,
+                            (slice,),
                         )
                     )
                 elif "tensorflow" not in str(clf):
                     async_results.append(
                         pool.apply_async(
                             clf.predict_proba,
-                            slice,
+                            (slice,),
                         )
                     )
                 else:
                     async_results.append(
                         pool.apply_async(
                             clf.predict_proba,
-                            slice,
+                            (slice,),
                         )
                     )
         rescore_results = np.array(async_result_resolving.resolve(async_results))
