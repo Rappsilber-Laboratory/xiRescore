@@ -11,7 +11,7 @@ def rescore(models, df, rescore_col, apply_logit=False, logger=logging.getLogger
     n_procs = int(mp.cpu_count() - 1)
     n_models = len(models)
     n_dataslices = ceil(n_procs/n_models)
-    slice_size = len(df) / n_dataslices
+    slice_size = ceil(len(df) / n_dataslices)
     logger.debug(f'Split {len(df)} samples in {n_dataslices} slices of {slice_size}')
 
     # Slice input data for multiprocessing
