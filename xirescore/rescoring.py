@@ -47,7 +47,10 @@ def rescore(models, df, rescore_col, apply_logit=False, logger=logging.getLogger
                             (slice,),
                         )
                     )
-        rescore_results = np.array(async_result_resolving.resolve(async_results))
+
+        rescore_results = np.array([
+            res[:, 1] for res in async_result_resolving.resolve(async_results)
+        ])
 
     # Apply logit
     if apply_logit:
