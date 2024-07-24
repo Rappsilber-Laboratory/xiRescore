@@ -461,12 +461,10 @@ class DBConnector:
             peptideposition_df,
             left_on=['peptide_id', 'search_id'],
             right_on=['mod_pep_id', 'search_id'],
-            validate='m:1',
             suffixes=('', '_peppos'),
         ).merge(
             protein_df,
             on=['protein_id'],
-            validate='1:m',
             suffixes=('', '_protein'),
         )
 
