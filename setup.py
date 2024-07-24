@@ -12,13 +12,13 @@ with open('HISTORY.rst') as history_file:
 
 requirements = [
     "frosch~=0.1.9",
-    "pandas~=2.0.1",
-    "numpy~=1.24.3",
+    "pandas~=2.2.2",
+    "numpy~=2.0.1",
     "PyYAML~=6.0",
     "tabulate~=0.9.0",
-    "setuptools~=65.5.1",
+    "setuptools~=71.1.0",
     "numpy-indexed~=0.3.7",
-    "scikit-learn~=1.3.0",
+    "scikit-learn~=1.5.1",
     "joblib~=1.2.0",
     "xgboost~=1.7.5",
     "tqdm~=4.66.0",
@@ -30,7 +30,7 @@ requirements = [
     "imblearn~=0.0",
     "JPype1~=1.4.1",
     "XlsxWriter~=3.1.0",
-    "pytest~=7.3.1",
+    "pytest~=8.3.1",
     "pydocstyle~=6.3.0",
     "pytest-cov~=4.0.0",
     "pytest-flake8~=1.0.6",
@@ -45,9 +45,9 @@ requirements = [
     "SQLAlchemy~=2.0.30",
     "psycopg2>=2.9",
     "python-logging-loki",
-    "fastparquet=2024.5.0",
-    "pyarrow=16.0.0",
-    "scipy~=1.13.0",
+    "fastparquet~=2024.5.0",
+    "pyarrow~=17.0.0",
+    "scipy~=1.14.0",
 ]
 
 test_requirements = ['pytest>=3', ]

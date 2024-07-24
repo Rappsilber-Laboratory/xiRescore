@@ -1,8 +1,8 @@
 import fastparquet
 import pandas as pd
-from DBConnector import DBConnector
+from xirescore.DBConnector import DBConnector
 from pathlib import Path
-from readers import get_source_type
+from xirescore.readers import get_source_type
 
 
 def append_rescorings(output, df: pd.DataFrame):

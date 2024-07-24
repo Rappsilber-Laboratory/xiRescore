@@ -1,8 +1,9 @@
 import logging
 import functools
+from collections.abc import Iterable
 import multiprocess as mp
 import time
-import tqdm
+from tqdm import tqdm
 
 
 def resolve(async_results, show_pbar=True, pbar_args=dict(), logger=None):
@@ -12,7 +13,7 @@ def resolve(async_results, show_pbar=True, pbar_args=dict(), logger=None):
         logger = logger.getChild(__name__)
 
     logger.debug("Resolving results")
-    if type(async_results) is not list:
+    if not isinstance(async_results, Iterable):
         logger.debug("Single result")
         if type(async_results) is functools.partial:
             logger.debug("Partial result")

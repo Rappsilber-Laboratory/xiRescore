@@ -3,12 +3,12 @@ from typing import Callable
 from sklearn.model_selection import ParameterGrid
 import importlib
 import multiprocess as mp
-from NoOverlapKFold import NoOverlapKFold
+from xirescore.NoOverlapKFold import NoOverlapKFold
 import logging
 import numpy as np
 from sklearn.base import ClassifierMixin
 from functools import partial
-import async_result_resolving
+from xirescore import async_result_resolving
 import sklearn
 from sklearn.metrics import accuracy_score, balanced_accuracy_score
 
@@ -24,12 +24,12 @@ def train(train_df, cols_features, clf_params, options,
 
     # Get peptide sequence columns
     cols_pepseq = [
-        options['input']['base_sequence_p1'],
-        options['input']['base_sequence_p2'],
+        options['input']['columns']['base_sequence_p1'],
+        options['input']['columns']['base_sequence_p2'],
     ]
 
     # Get column for target labeling
-    col_label = options['input']['target']
+    col_label = options['input']['columns']['target']
 
     # Get DataFrames for peptide sequences, features and labels
     pepseq_df = train_df[cols_pepseq]
@@ -39,7 +39,8 @@ def train(train_df, cols_features, clf_params, options,
     # Import model
     model_class = options['rescoring']['model_class']
     model_name = options['rescoring']['model_name']
-    model = importlib.import_module(f"sklearn.{model_class}.{model_name}")
+    model_module = importlib.import_module(f"sklearn.{model_class}")
+    model: ClassifierMixin.__class__ = getattr(model_module, model_name)
 
     # Check for single core model
     is_mp_model = hasattr(model, 'n_jobs')
@@ -49,13 +50,23 @@ def train(train_df, cols_features, clf_params, options,
     n_splits = options['rescoring']['n_splits']
 
     # Get non peptide overlapping k-fold splits
-    kf = NoOverlapKFold(n_splits, random_state=seed, shuffle=True, logger=logger)
-    splits = kf.splits_by_peptides(train_df, pepseq_df)
+    kf = NoOverlapKFold(
+        n_splits,
+        pep1_id_col=options['input']['columns']['base_sequence_p1'],
+        pep2_id_col=options['input']['columns']['base_sequence_p2'],
+        target_col=col_label,
+        random_state=seed,
+        shuffle=True,
+        logger=logger
+    )
+    splits = kf.splits_by_peptides(
+        df=train_df,
+        pepseqs=pepseq_df
+    )
 
-    max_jobs = min([
-        options['rescoring']['max_jobs'],
-        mp.cpu_count() - 1,
-    ])
+    max_jobs = options['rescoring']['max_jobs']
+    if max_jobs < 1:
+        max_jobs = mp.cpu_count() - 1
 
     fold_clfs = []
     with mp.Pool(processes=max_jobs) as pool:
@@ -73,7 +84,7 @@ def train(train_df, cols_features, clf_params, options,
                     )
                 ]
             else:
-                fold_clf = pool.async_apply(
+                fold_clf = pool.apply_async(
                     train_fold,
                     kwds=dict(
                         features_df=features_df,
@@ -106,12 +117,12 @@ def train_fold(features_df, labels_df, fold, params, options, logger: logging.Lo
     train_idx, test_idx = fold
 
     # Get fold's train features and labels
-    fold_train_features_df = features_df[train_idx]
-    fold_train_labels_df = labels_df[train_idx]
+    fold_train_features_df = features_df.loc[train_idx]
+    fold_train_labels_df = labels_df.loc[train_idx]
 
     # Get fold's test features and labels
-    fold_test_features_df = features_df[test_idx]
-    fold_test_labels_df = labels_df[test_idx]
+    fold_test_features_df = features_df.loc[test_idx]
+    fold_test_labels_df = labels_df.loc[test_idx]
 
     # Train fold classifier
     clf = model(**params)

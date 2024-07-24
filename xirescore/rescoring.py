@@ -2,7 +2,7 @@ import multiprocess as mp
 from math import ceil
 import numpy as np
 import pandas as pd
-import async_result_resolving
+from xirescore import async_result_resolving
 import scipy
 
 

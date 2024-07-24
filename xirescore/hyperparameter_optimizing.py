@@ -3,12 +3,12 @@ from typing import Callable
 from sklearn.model_selection import ParameterGrid
 import importlib
 import multiprocess as mp
-from NoOverlapKFold import NoOverlapKFold
+from xirescore.NoOverlapKFold import NoOverlapKFold
 import logging
 import numpy as np
 from sklearn.base import ClassifierMixin
 from functools import partial
-import async_result_resolving
+from xirescore import async_result_resolving
 import sklearn
 from sklearn.metrics import accuracy_score, balanced_accuracy_score
 
@@ -24,12 +24,12 @@ def get_hyperparameters(train_df, cols_features, options,
 
     # Get peptide sequence columns
     cols_pepseq = [
-        options['input']['base_sequence_p1'],
-        options['input']['base_sequence_p2'],
+        options['input']['columns']['base_sequence_p1'],
+        options['input']['columns']['base_sequence_p2'],
     ]
 
     # Get column for target labeling
-    col_label = options['input']['target']
+    col_label = options['input']['columns']['target']
 
     # Get DataFrames for peptide sequences, features and labels
     pepseq_df = train_df[cols_pepseq]
@@ -53,13 +53,25 @@ def get_hyperparameters(train_df, cols_features, options,
     hyperparam_grid = list(ParameterGrid(options['rescoring']['model_params']))
 
     # Get non peptide overlapping k-fold splits
-    kf = NoOverlapKFold(n_splits, random_state=seed, shuffle=True, logger=logger)
-    splits = kf.splits_by_peptides(train_df, pepseq_df)
+    kf = NoOverlapKFold(
+        n_splits,
+        random_state=seed,
+        shuffle=True,
+        pep1_id_col=options['input']['columns']['base_sequence_p1'],
+        pep2_id_col=options['input']['columns']['base_sequence_p2'],
+        target_col=col_label,
+        logger=logger,
+    )
+    splits = kf.splits_by_peptides(
+        df=train_df,
+        pepseqs=pepseq_df
+    )
 
-    max_jobs = min([
-        options['rescoring']['max_jobs'],
-        mp.cpu_count()-1,
-    ])
+    max_jobs = options['rescoring']['max_jobs']
+    if max_jobs < 1:
+        max_jobs = mp.cpu_count()-1
+
+    logger.info(f'Using {max_jobs} CPU cores')
 
     # Create partial function for parameter testing
     param_try_job = partial(
@@ -79,7 +91,7 @@ def get_hyperparameters(train_df, cols_features, options,
                 for params in hyperparam_grid
             ]
         else:
-            param_scores = pool.async_map(
+            param_scores = pool.map_async(
                 param_try_job,
                 hyperparam_grid
             )

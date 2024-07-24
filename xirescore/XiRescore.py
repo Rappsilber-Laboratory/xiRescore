@@ -1,20 +1,36 @@
 """Main module."""
-from _default_options import default_options
-import train_data_selecting
-import training
-import readers
-import writers
-import rescoring
-from hyperparameter_optimizing import get_hyperparameters
+from xirescore._default_options import default_options
+from xirescore import train_data_selecting
+from xirescore import training
+from xirescore import readers
+from xirescore import writers
+from xirescore import rescoring
+from xirescore.hyperparameter_optimizing import get_hyperparameters
 
 import pandas as pd
 import numpy as np
-import deepmerge
+from deepmerge import always_merger, Merger
 import logging
 import random
 from math import ceil
 from sklearn.preprocessing import StandardScaler
 
+options_merger = Merger(
+    # pass in a list of tuple, with the
+    # strategies you are looking to apply
+    # to each type.
+    [
+        (dict, ["merge"]),
+        (list, ["override"]),
+        (set, ["override"])
+    ],
+    # next, choose the fallback strategies,
+    # applied to all other types:
+    ["override"],
+    # finally, choose the strategies in
+    # the case where the types conflict:
+    ["override"]
+)
 
 class XiRescore:
     _options = default_options
@@ -31,8 +47,14 @@ class XiRescore:
                  cols_spectrum_id=None,
                  logger=None,
                  loglevel=logging.DEBUG):
+        # Apply override default options with user-supplied options
+        self._options = options_merger.merge(
+            self._options,
+            options
+        )
+
         # Set random seed
-        seed = options['rescoring']['random_seed']
+        seed = self._options['rescoring']['random_seed']
         np.random.seed(seed)
         random.seed(seed)
 
@@ -43,12 +65,6 @@ class XiRescore:
             self._output = pd.DataFrame()
         else:
             self._output = output_path
-
-        # Apply override default options with user-supplied options
-        self._options = deepmerge.merge_or_raise(
-            self._options,
-            options
-        )
 
         # Store CSM ID columns
         self._cols_csm_id = cols_csm_id
@@ -62,10 +78,12 @@ class XiRescore:
         self._loglevel = loglevel
 
     def run(self):
+        self._logger.info("Start full train and rescore run")
         self.train()
         self.rescore()
 
     def train(self, train_df=None):
+        self._logger.info('Start training')
         if train_df is None:
             train_df = train_data_selecting.select(
                 self._input,
@@ -97,10 +115,6 @@ class XiRescore:
         """
         features = self._get_features(df)
         df_features = df[features]
-        n_all_cols = len(df_features.columns)
-        df_features = df_features.dropna(axis='columns')
-        n_dropped_cols = n_all_cols-len(df_features.columns)
-        self._logger.info(f"Dropped {n_dropped_cols} columns with NaN-values of {n_all_cols}.")
 
         std_scaler = StandardScaler()
         std_scaler.fit(df_features)
@@ -114,12 +128,22 @@ class XiRescore:
         features_const = self._options['input']['columns']['features']
         feat_prefix = self._options['input']['columns']['feature_prefix']
         features_prefixes = [
-            c for c in df.columns if c.beginswith(feat_prefix)
+            c for c in df.columns if str(c).startswith(feat_prefix)
         ]
-        return features_const + features_prefixes
+        features = features_const + features_prefixes
+
+        n_all_featrues = len(features)
+        features = [
+            f for f in features if not any(np.isnan(df[f].values))
+        ]
+        n_dropped_features = n_all_featrues - len(features)
+
+        self._logger.info(f"Dropped {n_dropped_features} columns with NaN-values of {n_all_featrues}.")
+
+        return features
 
     def rescore(self, df=None, spectra_batch_size=100_000):
-        cols_spectra = self._options['input']['columns']['spectrum']
+        cols_spectra = self._options['input']['columns']['spectrum_id']
         col_rescore = self._options['output']['columns']['rescore']
         if self._options['input']['columns']['csm_id'] is None:
             col_csm = list(self.train_df.columns)
@@ -136,7 +160,7 @@ class XiRescore:
         spectra = readers.read_spectra_ids(input_data, cols_spectra)
 
         # Sort spectra
-        spectra = spectra.sort_values(by=list(spectra.columns))
+        spectra.sort()
 
         # Calculate number of batches
         n_batches = ceil(len(spectra)/spectra_batch_size)
@@ -145,11 +169,11 @@ class XiRescore:
         df_rescored = pd.DataFrame()
         for i_batch in range(n_batches):
             # Define batch borders
-            spectra_range = spectra.iloc[
+            spectra_range = spectra[
                 i_batch*spectra_batch_size:(i_batch+1)*spectra_batch_size
             ]
-            spectra_from = spectra_range.iloc[0]
-            spectra_to = spectra_range.iloc[-1]
+            spectra_from = spectra_range[0]
+            spectra_to = spectra_range[-1]
 
             # Read batch
             df_batch = readers.read_spectra_range(

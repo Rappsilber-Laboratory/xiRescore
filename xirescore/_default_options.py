@@ -3,19 +3,23 @@ import numpy as np
 default_options = {
     'input': {
         'columns': {
-            'score': 'match_score',
+            'top_ranking': 'top_ranking',
+            'score': 'feature_match_score',
             'base_sequence_p1': 'base_sequence_p1',
             'base_sequence_p2': 'base_sequence_p2',
             'protein_p1': 'protein_p1',
             'protein_p2': 'protein_p2',
-            'train_flag': None,
+            'decoy_p1': 'is_decoy_p1',
+            'decoy_p2': 'is_decoy_p2',
+            'fdr': 'fdr',
+            'self_between': 'fdr_group',
             'target': 'isTT',
+            'decoy_class': 'decoy_class',
             'native_score': 'match_score',
-            'feature_prefix': 'feat_',
+            'feature_prefix': 'feature_',
             'features': [],
             'csm_id': None,
-            'spectrum_id': None,
-            'decoy_class': 'decoy_class',
+            'spectrum_id': ['spectrum_id'],
         },
         'constants': {
             'self': 'self',
@@ -24,7 +28,7 @@ default_options = {
     },
     'rescoring': {
         'train_fdr_threshold': 0.01,  # Threshold for trian mode 'fdr'
-        'train_sample_mode': 'target_follow_capped',
+        'train_selection_mode': 'self-targets-all-decoys',
         'self_between_balanced': True,
         'train_size_max': 20_000,
         'model_class': 'linear_model',

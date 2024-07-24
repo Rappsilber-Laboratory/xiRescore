@@ -60,7 +60,8 @@ def read_spectra(path: str, spectra: Sequence[Sequence], spectra_cols: Sequence)
 def read_spectra_range(input: str | pd.DataFrame,
                        spectra_from: Sequence[Sequence],
                        spectra_to: Sequence[Sequence],
-                       spectra_cols: Sequence = None):
+                       spectra_cols: Sequence = None,
+                       logger = None):
     # Handle input DF
     if type(input) is pd.DataFrame:
         filters = input[
@@ -75,7 +76,7 @@ def read_spectra_range(input: str | pd.DataFrame,
     if file_type == 'tsv':
         return read_spectra_range_csv(input, spectra_from, spectra_to, sep='\t', spectra_cols=spectra_cols)
     if file_type == 'db':
-        return read_spectra_range_db(input, spectra_from, spectra_to)
+        return read_spectra_range_db(input, spectra_from, spectra_to, logger=logger)
     if file_type == 'parquet':
         return read_spectra_range_parquet(input, spectra_from, spectra_to, spectra_cols=spectra_cols)
 
@@ -92,14 +93,15 @@ def read_spectra_db(path, spectra: Sequence[Sequence]):
     )
 
 
-def read_spectra_range_db(path, spectra_from, spectra_to):
+def read_spectra_range_db(path, spectra_from, spectra_to, logger):
     db_user, db_pass, db_host, db_port, db_db, rs_ids = parse_db_path(path)
     db = DBConnector(
         username=db_user,
         password=db_pass,
         hostname=db_host,
         port=db_port,
-        database=db_db
+        database=db_db,
+        logger=logger,
     )
     return db.read_spectra_range(
         resultset_ids=rs_ids,
@@ -222,7 +224,10 @@ def parse_db_path(path):
     return db_user, db_pass, db_host, db_port, db_db, rs_ids
 
 
-def read_top_sample(input_data, sample=1_000_000, top_ranking_col='top_ranking'):
+def read_top_sample(input_data,
+                    sample=1_000_000,
+                    top_ranking_col='top_ranking',
+                    logger=None):
     if type(input_data) is pd.DataFrame:
         sample_min = min(
             len(input_data),
@@ -243,7 +248,8 @@ def read_top_sample(input_data, sample=1_000_000, top_ranking_col='top_ranking')
             password=db_pass,
             hostname=db_host,
             port=db_port,
-            database=db_db
+            database=db_db,
+            logger=logger,
         )
         return db.read_resultsets(
             resultset_ids=rs_ids,

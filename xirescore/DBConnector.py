@@ -190,9 +190,30 @@ class DBConnector:
 
         resultmatch_scores_df.drop('scores', inplace=True, axis=1)
 
+        # Merge with peptide/protein information
+        peptide_df = self._get_peptide_protein_df(search_ids)
+        peptide1_df = peptide_df.rename(
+            {c: f'{c}_p1' for c in peptide_df.columns},
+            axis=1
+        )
+        peptide2_df = peptide_df.rename(
+            {c: f'{c}_p2' for c in peptide_df.columns},
+            axis=1
+        )
+        resultmatch_peptides_scores_df = resultmatch_scores_df.merge(
+            peptide1_df,
+            left_on=['pep1_id'],
+            right_on=['peptide_id_p1'],
+        ).merge(
+            peptide2_df,
+            left_on=['pep2_id'],
+            right_on=['peptide_id_p2'],
+        )
+
+        # Merge with resultset information
         resultset_df = self._get_resultset_df(resultset_ids)
 
-        resultmatch_full_df = resultmatch_scores_df.merge(
+        resultmatch_full_df = resultmatch_peptides_scores_df.merge(
             resultset_df,
             on=['resultset_id'],
             suffixes=('', '_resultset'),
@@ -440,11 +461,12 @@ class DBConnector:
             peptideposition_df,
             left_on=['peptide_id', 'search_id'],
             right_on=['mod_pep_id', 'search_id'],
+            validate='m:1',
             suffixes=('', '_peppos'),
         ).merge(
             protein_df,
-            left_on=['protein_id'],
-            right_on=['protein_id'],
+            on=['protein_id'],
+            validate='1:m',
             suffixes=('', '_protein'),
         )
 

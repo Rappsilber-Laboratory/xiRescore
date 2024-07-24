@@ -13,4 +13,3 @@ setuptools~=71.1.0
 fastparquet~=2024.5.0
 pyarrow~=17.0.0
 scipy~=1.14.0
-sphinx_rtd_theme

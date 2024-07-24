@@ -1,6 +1,7 @@
 import pandas as pd
-import readers
-from bi_fdr import self_or_between_mp, calculate_bi_fdr
+from xirescore import readers
+from xirescore.column_generating import generate as generate_columns
+from xirescore.bi_fdr import self_or_between_mp, calculate_bi_fdr
 import logging
 import numpy as np
 
@@ -38,27 +39,12 @@ def select(input_data, options, logger):
     col_target = options['input']['columns']['target']
     fdr_cutoff = options['rescoring']['train_fdr_threshold']
     val_self = options['input']['constants']['self']
-    col_prot1 = options['input']['columns']['protein_p1']
-    col_prot2 = options['input']['columns']['protein_p2']
 
     # Read input data
-    df = readers.read_top_sample(input_data)
+    df = readers.read_top_sample(input_data, logger=logger)
 
-    # Check if 'fdr_group' column is present, if not create it
-    if 'fdr_group' not in options['input']['columns']:
-        df['fdr_group'] = self_or_between_mp(
-            df,
-            col_prot1=col_prot1,
-            col_prot2=col_prot2,
-        )
-    # Check if 'fdr' column is present, if not calculate it
-    if 'fdr' not in options['input']['columns']:
-        df['fdr'] = calculate_bi_fdr(
-            df,
-            score_col=col_native_score,
-            fdr_group_col=getattr(options['input']['columns'], 'fdr_group', 'fdr_group'),
-            decoy_class=options['input']['columns']['decoy_class'],
-        )
+    # Generate needed columns
+    df = generate_columns(df, options=options, do_fdr=True, do_self_between=True)
 
     # Selection mode: self-targets-all-decoys
     if selection_mode == 'self-targets-all-decoys':
