@@ -43,8 +43,6 @@ class XiRescore:
                  input_path,
                  output_path=None,
                  options=dict(),
-                 cols_csm_id=None,
-                 cols_spectrum_id=None,
                  logger=None,
                  loglevel=logging.DEBUG):
         # Apply override default options with user-supplied options
@@ -65,12 +63,6 @@ class XiRescore:
             self._output = pd.DataFrame()
         else:
             self._output = output_path
-
-        # Store CSM ID columns
-        self._cols_csm_id = cols_csm_id
-
-        # Store Spectrum ID columns
-        self._cols_spectrum = cols_spectrum_id
 
         # Use supplied logger if present
         if logger is not None:
@@ -219,12 +211,12 @@ class XiRescore:
             )
 
             # Calculate top_ranking
-            df_batch_top_rank = df_batch.groupby(self._cols_spectrum).agg({
+            df_batch_top_rank = df_batch.groupby(cols_spectra).agg({
                 f'rescore_max': pd.NamedAgg(column='rescore', aggfunc='max')
             })
             df_batch.merge(
                 df_batch_top_rank,
-                left_on=list(self._cols_spectrum),
+                left_on=list(cols_spectra),
                 right_index=True
             )
             df_batch['top_ranking'] = df_batch['rescore'] == df_batch[f'rescore_max']
