@@ -535,6 +535,8 @@ class DBConnector:
         resultset_id = self._get_tailing_uuid()
         rstype_id = self._get_rstype_id(rs_type)
 
+        main_score_idx = score_names.index(main_score)
+
         rs_query = insert(
             tables['resultset']
         ).values({
