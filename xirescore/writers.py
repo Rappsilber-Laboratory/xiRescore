@@ -67,6 +67,10 @@ def append_db(output, df: pd.DataFrame, options, logger=None):
         # Create new resultset
         score_names = [c for c in df.columns if str(c).startswith(col_rescore)]
         search_ids = search_ids=df['search_id'].drop_duplicates().values
+        resultset_name_join = ';'.join(
+            df['resultset_name'].drop_duplicates().values
+        )
+        resultset_name = f'xiML({resultset_name_join})'
         resultset_id = db.create_resultset(
             resultset_name,
             score_names=score_names,
