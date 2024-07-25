@@ -54,7 +54,7 @@ def append_db(output, df: pd.DataFrame, logger=None):
         logger=logger,
     )
     cols_scores = [
-        c for c in df.columns if c.startswith('rescore')
+        c for c in df.columns if str(c).startswith('rescore')
     ]
     resultset_id = db.last_resultset_id_written
     db.write_resultmatches(df, feature_cols=cols_scores, resultset_id=resultset_id)
