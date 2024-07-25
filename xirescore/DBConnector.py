@@ -598,7 +598,10 @@ class DBConnector:
             result_type='reduce',
             axis=1
         )
-        for c in ['scores']:
+        rm_df['link_score_site1'] = rm_df['link_score_site1'].str.split(';')
+        rm_df['link_score_site2'] = rm_df['link_score_site2'].str.split(';')
+        rm_df['link_score'] = rm_df['link_score'].str.split(';')
+        for c in ['scores', 'link_score_site1', 'link_score_site2', 'link_score']:
             rm_df[c] = rm_df[c].apply(
                 lambda x:
                 '{' +
