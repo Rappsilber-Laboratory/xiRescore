@@ -168,7 +168,7 @@ class XiRescore:
             ]
             spectra_from = spectra_range[0]
             spectra_to = spectra_range[-1]
-            self._logger.info(f'Start rescoring spectra batch {i_batch} with `{spectra_from}` to `{spectra_to}`')
+            self._logger.info(f'Start rescoring spectra batch {i_batch+1}/{n_batches} with `{spectra_from}` to `{spectra_to}`')
 
             # Read batch
             df_batch = readers.read_spectra_range(
