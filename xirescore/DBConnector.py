@@ -35,6 +35,7 @@ _TABLES = [
     'matchedspectrum',
 ]
 
+_cache_dict = dict()
 
 class DBConnector:
     def __init__(self,
@@ -72,21 +73,23 @@ class DBConnector:
                 autoload_with=self.engine,
                 quote=False
             )
-        self._cache_dict = dict()
-
 
     def _cache_load(self, func_name, args):
+        global _cache_dict
         key = (func_name, str(args))
-        if key in self._cache_dict:
-            return self._cache_dict[key]
+        if key in _cache_dict:
+            self.logger.debug('Cache hit')
+            return _cache_dict[key]
         else:
+            self.logger.debug('Cache miss')
             return None
 
     def _cache_store(self, func_name, args, value):
+        global _cache_dict
         key = (func_name, str(args))
-        self._cache_dict[key] = value
+        _cache_dict[key] = value
 
-    def _get_search_resset_ids(self, search_ids=[], resultset_ids=[]) -> (set, set):
+    def _get_search_resset_ids(self, search_ids=[], resultset_ids=[], use_cache=True) -> (set, set):
         self.logger.debug('Fetch resultsearch table')
         with self.engine.connect() as conn:
             ids_query = select(
@@ -98,7 +101,13 @@ class DBConnector:
                     self.tables['resultsearch'].c.resultset_id.in_(resultset_ids),
                 )
             )
-            res = conn.execute(ids_query).mappings().all()
+            cache_res = self._cache_load('_get_search_resset_ids', (search_ids, resultset_ids))
+            if use_cache and cache_res is not None:
+                self.logger.debug('Using cache result')
+                res = cache_res
+            else:
+                res = conn.execute(ids_query).mappings().all()
+                self._cache_store('_get_search_resset_ids', (search_ids, resultset_ids), res)
         return {r['search_id'] for r in res}, {r['resultset_id'] for r in res}
 
     def _get_resultset_df(self, resultset_ids, use_cache=True):
@@ -122,6 +131,7 @@ class DBConnector:
                 res = cache_res
             else:
                 res = conn.execute(resultset_query).mappings().all()
+                self._cache_store('_get_resultset_df', (resultset_ids,), res)
         return pd.DataFrame(res)
 
     def _get_resultmatch_df(self, search_ids, only_top_ranking=False, select_cols: list = None) -> pd.DataFrame:
