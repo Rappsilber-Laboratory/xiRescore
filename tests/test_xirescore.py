@@ -15,7 +15,7 @@ def test_full_db_rescoring():
     logger.info('Start full DB rescoring test')
     rescorer = XiRescore(
         input_path='xi2resultsets://test:test@localhost:5432/xisearch2/fdbe9e59-2baa-44cb-b8cb-e8b7a590e136',
-        output_path='xi2resultsets://test:test@localhost:5432/xisearch2/',
+        output_path='xi2resultsets://test:test@localhost:5432/xisearch2',
         logger=logger
     )
     rescorer.run()
