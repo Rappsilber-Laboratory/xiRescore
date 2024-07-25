@@ -523,9 +523,58 @@ class DBConnector:
             )
         )[2:].zfill(len_timestamp)
         len_rand = 32 - len_timestamp - len_leading_f
-        random_hex = ''.join(random.choice('0123456789abcdef') for _ in range(len_rand))
+        random_hex = ''.join(
+            random.choice('0123456789abcdef')
+            for _ in range(len_rand)
+        )
         resultset_id = ('f' * len_leading_f) + timestamp + random_hex
         return resultset_id
+
+    def create_resultset(self, resultset_name, score_names, main_score, config, search_ids, rs_type='xiML'):
+        tables = self._get_tables()
+        resultset_id = self._get_tailing_uuid()
+        rstype_id = self._get_rstype_id(rs_type)
+
+        rs_query = insert(
+            tables['resultset']
+        ).values({
+            'id': resultset_id,
+            'name': resultset_name,
+            'main_score': main_score_idx,
+            'rstype_id': rstype_id,
+            'config': config,
+        })
+
+        sn_query = insert(
+            tables['scorename']
+        ).values([
+            {
+                'resultset_id': resultset_id,
+                'score_id': i,
+                'name': name,
+                'primary_score': name == main_score,
+                'higher_is_better': True
+            } for i, name in enumerate(score_names)
+        ])
+
+        rsrch_query = insert(tables['resultsearch']).values([
+            {
+                'search_id': search_id,
+                'resultset_id': resultset_id,
+            } for search_id in search_ids
+        ])
+
+        with self.engine.connect() as conn:
+            self.logger.debug("Create resultset")
+            conn.execute(rs_query)
+            self.logger.debug("Create scorenames")
+            conn.execute(sn_query)
+            self.logger.debug("Create resultsearches")
+            conn.execute(rsrch_query)
+            conn.commit()
+
+        return resultset_id
+
 
     def write_resultset(self, df, feature_cols, resultset_id=None, main_score_idx=0, config=''):
         tables = self._get_tables()
@@ -618,14 +667,14 @@ class DBConnector:
             with psycopg.cursor() as cursor:
                 cursor.copy_expert("COPY resultmatch FROM STDIN (FORMAT CSV, HEADER true)", f)
 
-    def _get_rstype_id(self):
+    def _get_rstype_id(self, name='xiML'):
         self.logger.debug('Fetch resultsettype table')
         with self.engine.connect() as conn:
             tables = self._get_tables()
             rstype_id_query = select(
                 tables['resultsettype'].c.id
             ).where(
-                tables['resultsettype'].c.name == 'xiML'
+                tables['resultsettype'].c.name == name
             )
             id_res = conn.execute(rstype_id_query).mappings().all()
         return id_res[0]['id']
