@@ -13,7 +13,7 @@ with open('HISTORY.rst') as history_file:
 requirements = [
     "frosch~=0.1.9",
     "pandas~=2.2.2",
-    "numpy~=2.0.1",
+    "numpy>=1.22.4",
     "PyYAML~=6.0",
     "tabulate~=0.9.0",
     "setuptools~=71.1.0",
@@ -25,7 +25,6 @@ requirements = [
     "hyperopt~=0.2.7",
     "lightgbm~=3.3.5",  # Check the pre-requirements https://pypi.org/project/lightgbm/
     "pyteomics~=4.6",
-    "matplotlib~=3.7.1",
     "seaborn~=0.12.2",
     "imblearn~=0.0",
     "JPype1~=1.4.1",
@@ -38,8 +37,6 @@ requirements = [
     "py~=1.11.0",
     "flake8==4.0.1",
     "networkx~=3.1",
-    "pyspark~=3.5.0",
-    "pyspark[sql]~=3.5.0",
     "multiprocess~=0.70.15",
     "deepmerge~=1.1.0",
     "SQLAlchemy~=2.0.30",
@@ -47,7 +44,7 @@ requirements = [
     "python-logging-loki",
     "fastparquet~=2024.5.0",
     "pyarrow~=17.0.0",
-    "scipy~=1.14.0",
+    "scipy>=1.12.0",
 ]
 
 test_requirements = ['pytest>=3', ]
