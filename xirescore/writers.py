@@ -14,7 +14,12 @@ def append_rescorings(output, df: pd.DataFrame, options=dict(), logger=None):
     if output_type == 'parquet':
         append_parquet(output, df)
     if output_type == 'db':
-        append_db(output, df, options, logger)
+        append_db(
+            output=output,
+            df=df,
+            options=options,
+            logger=logger,
+        )
 
 
 def append_parquet(output, df: pd.DataFrame, compression='GZIP'):

@@ -226,7 +226,7 @@ class XiRescore:
                     df_batch
                 ])
             else:
-                writers.append_rescorings(self._output, df_batch, self._logger)
+                writers.append_rescorings(self._output, df_batch, options=self._options, logger=self._logger)
 
         # Keep rescored matches when no output is defined
         if type(self._output) is pd.DataFrame:
