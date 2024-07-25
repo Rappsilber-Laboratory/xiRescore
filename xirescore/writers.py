@@ -5,7 +5,7 @@ from pathlib import Path
 from xirescore.readers import get_source_type
 
 
-def append_rescorings(output, df: pd.DataFrame):
+def append_rescorings(output, df: pd.DataFrame, logger=None):
     output_type = get_source_type(output)
     if output_type == 'csv':
         append_csv(output, df)
@@ -14,7 +14,7 @@ def append_rescorings(output, df: pd.DataFrame):
     if output_type == 'parquet':
         append_parquet(output, df)
     if output_type == 'db':
-        append_db(output, df)
+        append_db(output, df, logger)
 
 
 def append_parquet(output, df: pd.DataFrame, compression='GZIP'):
@@ -43,9 +43,16 @@ def parse_db_path(path):
     return db_user, db_pass, db_host, db_port, db_db
 
 
-def append_db(output, df: pd.DataFrame):
+def append_db(output, df: pd.DataFrame, logger=None):
     db_user, db_pass, db_host, db_port, db_db = parse_db_path(output)
-    db = DBConnector(db_user, db_pass, db_host, db_port, db_db)
+    db = DBConnector(
+        username=db_user,
+        password=db_pass,
+        hostname=db_host,
+        port=db_port,
+        database=db_db,
+        logger=logger,
+    )
     cols_scores = [
         c for c in df.columns if c.beginswith('rescore')
     ]
