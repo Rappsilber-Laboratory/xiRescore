@@ -103,7 +103,6 @@ class DBConnector:
             )
             cache_res = self._cache_load('_get_search_resset_ids', (search_ids, resultset_ids))
             if use_cache and cache_res is not None:
-                self.logger.debug('Using cache result')
                 res = cache_res
             else:
                 res = conn.execute(ids_query).mappings().all()
@@ -127,7 +126,6 @@ class DBConnector:
             )
             cache_res = self._cache_load('_get_resultset_df', (resultset_ids,))
             if use_cache and cache_res is not None:
-                self.logger.debug('Using cache result')
                 res = cache_res
             else:
                 res = conn.execute(resultset_query).mappings().all()
@@ -286,7 +284,6 @@ class DBConnector:
             )
             cache_res = self._cache_load('_get_protein_df', (search_ids,))
             if use_cache and cache_res is not None:
-                self.logger.debug('Using cache result')
                 res = cache_res
             else:
                 res = conn.execute(ids_query).mappings().all()
@@ -307,7 +304,6 @@ class DBConnector:
             )
             cache_res = self._cache_load('_get_peptide_df', (search_ids,))
             if use_cache and cache_res is not None:
-                self.logger.debug('Using cache result')
                 res = cache_res
             else:
                 res = conn.execute(ids_query).mappings().all()
@@ -334,14 +330,13 @@ class DBConnector:
             )
             cache_res = self._cache_load('_get_peptideposition_df', (search_ids,))
             if use_cache and cache_res is not None:
-                self.logger.debug('Using cache result')
                 res = cache_res
             else:
                 res = conn.execute(ids_query).mappings().all()
                 self._cache_store('_get_peptideposition_df', (search_ids,), res)
         return pd.DataFrame(res)
 
-    def _get_matchedspectrum_df(self, search_ids) -> pd.DataFrame:
+    def _get_matchedspectrum_df(self, search_ids, use_cache=True) -> pd.DataFrame:
         self.logger.debug('Fetch matchedspectrum table')
         with self.engine.connect() as conn:
             ids_query = select(
@@ -349,7 +344,12 @@ class DBConnector:
             ).where(
                 self.tables['matchedspectrum'].c.search_id.in_(search_ids)
             )
-            res = conn.execute(ids_query).mappings().all()
+            cache_res = self._cache_load('_get_matchedspectrum_df', (search_ids,))
+            if use_cache and cache_res is not None:
+                res = cache_res
+            else:
+                res = conn.execute(ids_query).mappings().all()
+                self._cache_store('_get_matchedspectrum_df', (search_ids,), res)
         return pd.DataFrame(res)
 
     def _get_spectrum_result_match_df(self,
@@ -489,7 +489,6 @@ class DBConnector:
             )
             cache_res = self._cache_load('_get_score_names', (resultset_ids,))
             if use_cache and cache_res is not None:
-                self.logger.debug('Using cache result')
                 res = cache_res
             else:
                 res = conn.execute(ids_query).mappings().all()
