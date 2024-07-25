@@ -69,6 +69,7 @@ def append_db(output, df: pd.DataFrame, options, logger=None):
             config=str(options),
             search_ids=search_ids,
         )
+        logger.info(f'Create resultset `{resultset_id}`')
     else:
         resultset_id = db.last_resultset_id_written
     db.write_resultmatches(df, feature_cols=cols_scores, resultset_id=resultset_id)
