@@ -61,7 +61,8 @@ def append_db(output, df: pd.DataFrame, options, logger=None):
         logger=logger,
     )
     cols_scores = [
-        c for c in df.columns if str(c).startswith(f'{col_rescore}_')
+        c for c in df.columns
+        if str(c).startswith(f'{col_rescore}_') or c == col_rescore
     ]
     if db.last_resultset_id_written is None:
         # Create new resultset
