@@ -211,15 +211,13 @@ class XiRescore:
             )
 
             # Calculate top_ranking
-            df_batch_top_rank = df_batch.groupby(cols_spectra).agg({
-                f'rescore_max': pd.NamedAgg(column='rescore', aggfunc='max')
-            })
-            df_batch.merge(
+            df_batch_top_rank = df_batch.groupby(cols_spectra).agg(max=(f'{col_rescore}', 'max')).rename({'max': f'{col_rescore}_max'}, axis=1)
+            df_batch = df_batch.merge(
                 df_batch_top_rank,
                 left_on=list(cols_spectra),
                 right_index=True
             )
-            df_batch['top_ranking'] = df_batch['rescore'] == df_batch[f'rescore_max']
+            df_batch['top_ranking'] = df_batch[f'{col_rescore}'] == df_batch[f'{col_rescore}_max']
 
             # Store collected matches
             if type(self._output) is pd.DataFrame:
