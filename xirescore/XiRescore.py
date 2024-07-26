@@ -200,7 +200,7 @@ class XiRescore:
             )
 
             # Rescore training data only with test fold classifier
-            df_slice = self.train_df.loc[:, col_csm]
+            df_slice = self.train_df.loc[:, col_csm].copy()
             df_slice[f'{col_rescore}_slice'] = -1
             for i, (_, idx_test) in enumerate(self.splits):
                 df_slice.loc[idx_test, f'{col_rescore}_slice'] = i
