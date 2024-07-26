@@ -48,22 +48,32 @@ def rescore(models, df, rescore_col, apply_logit=False, logger=logging.getLogger
                         )
                     )
 
-        rescore_results = np.array([
-            res[:, 1]  # Take prediction for class 1 (aka target)
-            for res in async_result_resolving.resolve(async_results)
-        ])
+        sync_results = async_result_resolving.resolve(async_results)
+        slice_results: list = [
+            # Join slices into a single array of all model predictions each
+            np.array([
+                sync_results[
+                    (slice_i*n_models)+model_i
+                ][:, 1]  # Take only prediction for class 1 (aka target)
+                for model_i in range(n_models)
+            ])
+            for slice_i in range(n_dataslices)
+        ]
 
     # Apply logit
     if apply_logit:
-        rescore_results = scipy.special.logit(rescore_results)
+        for i, sr in enumerate(slice_results):
+            slice_results[i] = scipy.special.logit(sr)
 
     # Init result DF
     df_rescore = pd.DataFrame(index=df.index)
 
     # Fill result DF
     for i_m, model in enumerate(models):
-        n_res = len(async_results)
-        rescores_m = rescore_results[i_m:n_res:n_models]
+        rescores_m = [
+            slice_results[i_s][i_m]
+            for i_s in range(n_dataslices)
+        ]
         df_rescore[f'{rescore_col}_{i_m}'] = np.concatenate(rescores_m)
 
     # Calculate mean score

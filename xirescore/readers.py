@@ -4,6 +4,8 @@ from collections.abc import Sequence
 from fastparquet import ParquetFile as FPParquetFile
 from pyarrow.parquet import ParquetFile as PAParquetFile
 from math import ceil
+import multiprocess as mp
+from time import sleep
 
 
 def read_spectra_ids(path, spectra_cols=None) -> pd.DataFrame:
@@ -61,7 +63,7 @@ def read_spectra_range(input: str | pd.DataFrame,
                        spectra_from: Sequence[Sequence],
                        spectra_to: Sequence[Sequence],
                        spectra_cols: Sequence = None,
-                       logger = None):
+                       logger=None):
     # Handle input DF
     if type(input) is pd.DataFrame:
         filters = input[
@@ -79,6 +81,37 @@ def read_spectra_range(input: str | pd.DataFrame,
         return read_spectra_range_db(input, spectra_from, spectra_to, logger=logger)
     if file_type == 'parquet':
         return read_spectra_range_parquet(input, spectra_from, spectra_to, spectra_cols=spectra_cols)
+
+
+def get_spectra_range_queue(input: str | pd.DataFrame,
+                            ranges,
+                            spectra_cols: Sequence = None,
+                            logger=None):
+    res_queue = mp.Queue()
+    p = mp.Process(
+        target=spectra_range_prefetcher,
+        args=(input, ranges, res_queue, spectra_cols, logger)
+    )
+    p.start()
+    return res_queue
+
+
+def spectra_range_prefetcher(input: str | pd.DataFrame,
+                             ranges,
+                             res_queue: mp.Queue,
+                             spectra_cols: Sequence = None,
+                             logger=None):
+    for spectra_from, spectra_to in ranges:
+        while not res_queue.empty():
+            sleep(1)
+        res = read_spectra_range(
+            input=input,
+            spectra_from=spectra_from,
+            spectra_to=spectra_to,
+            spectra_cols=spectra_cols,
+            logger=logger
+        )
+        res_queue.put(res)
 
 
 def read_spectra_db(path, spectra: Sequence[Sequence]):
@@ -136,10 +169,10 @@ def read_spectra_range_parquet(path,
         # Type-hint
         df: pd.DataFrame
         # Generate filters
-        filters = df[
-            (df[spectra_cols].apply(lambda r: tuple(r)) >= spectra_from) &
-            (df[spectra_cols].apply(lambda r: tuple(r)) <= spectra_to)
-        ]
+        filters = (
+            (df[spectra_cols].apply(lambda r: tuple(r)) >= tuple(spectra_from)) &
+            (df[spectra_cols].apply(lambda r: tuple(r)) <= tuple(spectra_to))
+        ).iloc[:, 0]
         # Append row group
         res_df = pd.concat(
             [
@@ -181,10 +214,10 @@ def read_spectra_range_csv(path,
     res_df = pd.DataFrame()
     for df in pd.read_csv(path, sep=sep, chunksize=chunksize):
         # Generate filters for the requested spectra range
-        filters = df[
-            (df[spectra_cols].apply(lambda r: tuple(r)) >= spectra_from) &
-            (df[spectra_cols].apply(lambda r: tuple(r)) <= spectra_to)
-            ]
+        filters = (
+            (df[spectra_cols].apply(lambda r: tuple(r)) >= tuple(spectra_from)) &
+            (df[spectra_cols].apply(lambda r: tuple(r)) <= tuple(spectra_to))
+        ).iloc[:, 0]
         # Append filtered chunk
         res_df = pd.concat(
             [

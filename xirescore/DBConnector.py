@@ -19,7 +19,7 @@ import numpy as np
 import uuid
 from datetime import datetime
 import random
-from collections.abc import Iterable
+from xirescore.df_serializing import serialize_columns
 from math import ceil
 
 _TABLES = [
@@ -36,6 +36,7 @@ _TABLES = [
 ]
 
 _cache_dict = dict()
+last_resultset_id_written = None
 
 class DBConnector:
     def __init__(self,
@@ -66,7 +67,6 @@ class DBConnector:
         )
         self.meta = MetaData()
         self.tables = dict()
-        self.last_resultset_id_written = None
         for tbl_name in _TABLES:
             self.tables[tbl_name] = Table(
                 tbl_name, self.meta,
@@ -541,7 +541,7 @@ class DBConnector:
             spectrum_ids=spectrum_ids,
             sample=sample
         )
-        return self._serialize_columns(df)
+        return serialize_columns(df)
 
     def read_spectra_range(self,
                            resultset_ids: list[str],
@@ -565,7 +565,7 @@ class DBConnector:
             matchedspec_where=matchedspec_where,
             sample=sample
         )
-        return self._serialize_columns(df)
+        return serialize_columns(df)
 
     def _get_tailing_uuid(self, len_timestamp=10, len_leading_f=4):
         timestamp = hex(
@@ -582,8 +582,10 @@ class DBConnector:
         return resultset_id
 
     def create_resultset(self, resultset_name, score_names, main_score, config, search_ids, rs_type='xiML'):
+        global last_resultset_id_written
         tables = self._get_tables()
         resultset_id = self._get_tailing_uuid()
+        last_resultset_id_written = resultset_id
         rstype_id = self._get_rstype_id(rs_type)
 
         main_score_idx = score_names.index(main_score)
@@ -630,10 +632,11 @@ class DBConnector:
 
 
     def write_resultset(self, df, feature_cols, resultset_id=None, main_score_idx=0, config=''):
+        global last_resultset_id_written
         tables = self._get_tables()
         if resultset_id is None:
             resultset_id = self._get_tailing_uuid()
-            self.last_resultset_id_written = resultset_id
+            last_resultset_id_written = resultset_id
         self.logger.info(f"Resultset ID: {resultset_id}")
 
         df['source_resultset_id'] = df['resultset_id']
@@ -742,44 +745,6 @@ class DBConnector:
             )
         return tables
 
-    def _serialize_columns(self, df):
-        nan_filter = None
-        for c in df.columns:
-            if nan_filter is None:
-                nan_filter = ~df[c].isna()
-            else:
-                nan_filter &= ~df[c].isna()
-
-        type_row = df[nan_filter]
-
-        if len(type_row) > 0:
-            type_row = type_row.iloc[:1]
-        else:
-            type_row = df.iloc[:1]
-
-        for c in df.columns:
-            col_row = type_row
-            if col_row[c] is None:
-                col_row = df[~df[c].isna()]
-                if len(col_row) == 0:
-                    self.logger.debug(f"Only NaN values for column {c}")
-                    continue
-            col_row = col_row.iloc[0]
-            if type(col_row[c]) is uuid.UUID:
-                df[c] = df[c].astype(str, errors='ignore')
-            elif type(col_row[c]) is str:
-                pass
-            elif isinstance(col_row[c], Iterable):
-                df[c] = df[c].apply(
-                    lambda x: None if x is None else ';'.join(np.array(x).astype(str))
-                )
-            elif np.issubdtype(type(col_row[c]), np.generic):
-                pass
-            else:
-                df[c] = df[c].astype(str, errors='ignore')
-        df.columns = df.columns.map(str)
-        return df
-
     def read_spectrum_ids(self, resultset_ids):
         search_ids, resultset_ids = self._get_search_resset_ids(resultset_ids=resultset_ids)
 
@@ -798,7 +763,11 @@ class DBConnector:
             )
             res = conn.execute(spectrum_query).mappings().all()
         df = pd.DataFrame(res)
-        return self._serialize_columns(df)
+        return serialize_columns(df)
+
+    def get_last_resultset_id_written(self):
+        global last_resultset_id_written
+        return last_resultset_id_written
 
     def close(self):
         self.engine.dispose()

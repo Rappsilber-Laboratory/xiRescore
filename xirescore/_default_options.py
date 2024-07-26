@@ -31,6 +31,7 @@ default_options = {
         'train_selection_mode': 'self-targets-all-decoys',
         'self_between_balanced': True,
         'train_size_max': 20_000,
+        'spectra_batch_size': 100_000,
         'model_class': 'linear_model',
         'model_name': 'LogisticRegression',
         'minimize_metric': True,

@@ -43,12 +43,14 @@ def test_full_parquet_rescoring():
                         'conditional_score',
                     ]
                 }
+            },
+            'rescoring': {
+                'spectra_batch_size': 25_000  # Rescore in 4 batches
             }
         }
 
         rescorer = XiRescore(
             input_path='./fixtures/test_data.parquet',
-            #input_path='./tests/fixtures/test_data.parquet',
             output_path=f'{tmpdirname}/result.parquet',
             options=options,
             logger=logger,

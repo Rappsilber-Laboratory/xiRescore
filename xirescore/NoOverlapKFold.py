@@ -129,10 +129,6 @@ class NoOverlapKFold:
             self.logger.debug("Disregard modifications")
             pepseqs_grouping = self.regroup_unmodified(pepseqs_grouping)
 
-            # Merge sequences that are contained in other sequences
-            #self.logger.debug("Group comprising sequences")
-            #pepseqs_grouping = self.regroup_subsequences(pepseqs_grouping)
-
             n_pepseqs = len(pepseqs_grouping['pepseq'].drop_duplicates())
             n_groups = len(pepseqs_grouping['group'].drop_duplicates())
             self.logger.debug(f"Grouping factor: {n_groups} groups / {n_pepseqs} seqs = {n_groups/n_pepseqs:.2f}")
@@ -234,7 +230,7 @@ class NoOverlapKFold:
                     seq1col=self.pep1_id_col,
                     seq2col=self.pep2_id_col,
                 )
-                new_size = len(splits[i][0])
+                new_size = len(splits_clean[i][0])
                 self.logger.info(
                     f"Split {i} train set clean-up: {new_size}/{old_size}="
                     f"{(100 * new_size / old_size): .2f}% remaining"
@@ -353,48 +349,6 @@ class NoOverlapKFold:
             left_on='alt_pepseq',
             right_index=True,
             validate='many_to_one',
-        )
-
-        pepseq_grouping['group'] = pepseq_grouping['new_group']
-
-        return pepseq_grouping[['pepseq', 'alt_pepseq', 'group']]
-
-    def regroup_subsequences(self, pepseq_grouping: pd.DataFrame, mode='subseq', overlap_factor=0.0) -> pd.DataFrame:
-        # Subsequence condition
-        def is_subseq(seq1: str, seq2: str):
-            if seq1 == seq2:
-                return False
-
-            overlapping = False
-            if mode == 'subseq':
-                overlapping = seq1 in seq2
-            elif mode == 'extension':
-                overlapping = seq2.startswith(seq1) or seq2.endswith(seq1)
-            overlapping_ammount = min([len(seq1), len(seq2)]) / max([len(seq1), len(seq2)])
-            return overlapping and (overlapping_ammount >= overlap_factor)
-
-        subseq_graph = nx.Graph()
-        subseq_graph.add_nodes_from(pepseq_grouping['alt_pepseq'])
-
-        for s1 in pepseq_grouping['alt_pepseq']:
-            for s2 in pepseq_grouping['alt_pepseq']:
-                if is_subseq(s1, s2):
-                    subseq_graph.add_edge(s1, s2)
-
-        subseq_components = nx.connected_components(subseq_graph)
-
-        regrouping = pd.DataFrame([
-            {'alt_pepseq_regroup': list(y_i)} for y_i in subseq_components
-        ])
-
-        regrouping['new_group'] = regrouping.reset_index().index
-        regrouping = regrouping.explode('alt_pepseq_regroup')
-
-        pepseq_grouping = pepseq_grouping.merge(
-            regrouping,
-            left_on='alt_pepseq',
-            right_on='alt_pepseq_regroup',
-            validate='one_to_many',
         )
 
         pepseq_grouping['group'] = pepseq_grouping['new_group']

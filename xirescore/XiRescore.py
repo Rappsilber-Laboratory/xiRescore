@@ -134,10 +134,11 @@ class XiRescore:
 
         return features
 
-    def rescore(self, df=None, spectra_batch_size=100_000):
+    def rescore(self, df=None):
         self._logger.info('Start rescoring')
         cols_spectra = self._options['input']['columns']['spectrum_id']
         col_rescore = self._options['output']['columns']['rescore']
+        spectra_batch_size = self._options['rescoring']['spectra_batch_size']
         if self._options['input']['columns']['csm_id'] is None:
             col_csm = list(self.train_df.columns)
         else:
@@ -175,20 +176,24 @@ class XiRescore:
                 input=input_data,
                 spectra_from=spectra_from,
                 spectra_to=spectra_to,
-                spectra_cols=cols_spectra
+                spectra_cols=cols_spectra,
             )
+
+            # Normalize features
+            df_batch = self._normalize_and_cleanup(df_batch)
 
             # Get feature columns
             feat_cols = self._get_features(df_batch)
 
             # Rescore batch
+            df_batch_scores = rescoring.rescore(
+                self.models,
+                df=df_batch[feat_cols],
+                rescore_col=col_rescore,
+                apply_logit=apply_logit
+            )
             df_batch = df_batch.merge(
-                rescoring.rescore(
-                    self.models,
-                    df=df_batch[feat_cols],
-                    rescore_col=col_rescore,
-                    apply_logit=apply_logit
-                ),
+                df_batch_scores,
                 left_index=True,
                 right_index=True,
                 validate='1:1',
@@ -200,7 +205,15 @@ class XiRescore:
             for i, (_, idx_test) in enumerate(self.splits):
                 df_slice.loc[idx_test, f'{col_rescore}_slice'] = i
 
-            df_batch = df_batch.merge(df_slice)
+            df_batch = df_batch.merge(
+                df_slice,
+                how='left',
+                validate='1:1',
+            )
+            df_batch.loc[
+                df_batch[f'{col_rescore}_slice'].isna(),
+                f'{col_rescore}_slice'
+            ] = -1
 
             df_batch.loc[df_batch[f'{col_rescore}_slice'] > -1, col_rescore] = df_batch.loc[
                 df_batch[f'{col_rescore}_slice'] > -1
@@ -243,7 +256,7 @@ class XiRescore:
 
 
 def _select_right_score(row, col_rescore):
-    n_slice = row[f"{col_rescore}_slice"]
+    n_slice = int(row[f"{col_rescore}_slice"])
     return row[f'{col_rescore}_{n_slice}']
 
 
