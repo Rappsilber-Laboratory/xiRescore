@@ -23,6 +23,7 @@ def test_full_db_rescoring():
     rescorer.run()
 
 
+@pytest.mark.parquet
 def test_full_parquet_rescoring():
     with tempfile.TemporaryDirectory(prefix='pytest_xirescore_') as tmpdirname:
         logger = logging.getLogger(__name__)
