@@ -333,4 +333,8 @@ def read_top_sample_csv(path, sample, sep=',', chunksize=5_000_000, top_ranking_
             sample * prop_chunks,
         )
         res_df = res_df.sample(subsample_size, random_state=random_state)
-    return res_df.sample(sample, random_state=random_state)
+    final_sample = min(
+        sample,
+        len(res_df)
+    )
+    return res_df.sample(final_sample, random_state=random_state)
