@@ -4,6 +4,18 @@ from xirescore.bi_fdr import self_or_between_mp, calculate_bi_fdr
 
 def generate(df, options: dict, do_self_between=False, do_fdr=False) -> pd.DataFrame:
     input_cols = options['input']['columns']
+    cols_spectra = options['input']['columns']['spectrum_id']
+    col_score = options['output']['columns']['score']
+    # Generate top_ranking
+    if input_cols['top_ranking'] not in df.columns:
+        df_max = df.groupby(cols_spectra).agg(max=(f'{col_score}', 'max')).rename(
+            {'max': f'{col_score}_max'}, axis=1)
+        df = df.merge(
+            df_max,
+            left_on=list(cols_spectra),
+            right_index=True
+        )
+        df['top_ranking'] = df[f'{col_score}'] == df[f'{col_score}_max']
     # Generate decoy_class column from decoy_p1 and decoy_p2
     if input_cols['decoy_class'] not in df.columns:
         df[input_cols['decoy_class']] = ''
@@ -44,5 +56,4 @@ def generate(df, options: dict, do_self_between=False, do_fdr=False) -> pd.DataF
             decoy_class=input_cols['decoy_class'],
             fdr_group_col=input_cols['self_between'],
         )
-
     return df
