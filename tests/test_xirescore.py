@@ -17,10 +17,16 @@ def test_full_db_rescoring():
     logging.basicConfig()
     logger.setLevel(logging.DEBUG)
     logger.info('Start full DB rescoring test')
+    options = {
+        'rescoring': {
+            'spectra_batch_size': 25_000  # Rescore in 4 batches
+        }
+    }
     rescorer = XiRescore(
         input_path='xi2resultsets://test:test@localhost:5432/xisearch2/fdbe9e59-2baa-44cb-b8cb-e8b7a590e136',
         output_path='xi2resultsets://test:test@localhost:5432/xisearch2',
-        logger=logger
+        options=options,
+        logger=logger,
     )
     rescorer.run()
 
