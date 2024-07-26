@@ -234,7 +234,7 @@ class XiRescore:
 
             # Store collected matches
             if type(self._output) is pd.DataFrame:
-                df_rescored = pd.DataFrame([
+                df_rescored = pd.concat([
                     df_rescored,
                     df_batch
                 ])
