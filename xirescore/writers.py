@@ -3,8 +3,8 @@ import pandas as pd
 from xirescore.DBConnector import DBConnector
 from pathlib import Path
 from xirescore.readers import get_source_type
-from xirescore.DBConnector import last_resultset_id_written
 from xirescore.df_serializing import serialize_columns
+
 
 def append_rescorings(output, df: pd.DataFrame, options=dict(), logger=None):
     output_type = get_source_type(output)
@@ -67,6 +67,7 @@ def append_db(output, df: pd.DataFrame, options, logger=None):
         c for c in df.columns
         if str(c).startswith(f'{col_rescore}_') or c == col_rescore
     ]
+    last_resultset_id_written = db.get_last_resultset_id_written()
     if last_resultset_id_written is None:
         # Create new resultset
         score_names = [c for c in df.columns if str(c).startswith(col_rescore)]
