@@ -10,7 +10,9 @@ from time import sleep
 
 def read_spectra_ids(path, spectra_cols=None) -> pd.DataFrame:
     if type(path) is pd.DataFrame:
-        return path.loc[:, spectra_cols].drop_duplicates()
+        return path.loc[:, spectra_cols]\
+            .drop_duplicates()\
+            .to_records(index=False)
 
     file_type = get_source_type(path)
 
@@ -66,10 +68,10 @@ def read_spectra_range(input: str | pd.DataFrame,
                        logger=None):
     # Handle input DF
     if type(input) is pd.DataFrame:
-        filters = input[
-            (input[spectra_cols].apply(lambda r: tuple(r)) >= spectra_from) &
-            (input[spectra_cols].apply(lambda r: tuple(r)) <= spectra_to)
-        ]
+        filters = (
+            (input[spectra_cols].apply(lambda r: tuple(r)) >= tuple(spectra_from)) &
+            (input[spectra_cols].apply(lambda r: tuple(r)) <= tuple(spectra_to))
+        ).iloc[:, 0]
         return input[filters]
     # Handle input path
     file_type = get_source_type(input)
@@ -263,7 +265,7 @@ def read_top_sample(input_data,
                     logger=None):
     if type(input_data) is pd.DataFrame:
         sample_min = min(
-            len(input_data),
+            len(input_data[input_data[top_ranking_col]]),
             sample
         )
         return input_data[
