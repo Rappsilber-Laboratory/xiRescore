@@ -32,6 +32,7 @@ options_merger = Merger(
     ["override"]
 )
 
+
 class XiRescore:
     _options = default_options
     _logger = logging.getLogger(__name__)
@@ -138,6 +139,7 @@ class XiRescore:
         self._logger.info('Start rescoring')
         cols_spectra = self._options['input']['columns']['spectrum_id']
         col_rescore = self._options['output']['columns']['rescore']
+        col_top_ranking = self._options['output']['columns']['top_ranking']
         spectra_batch_size = self._options['rescoring']['spectra_batch_size']
         if self._options['input']['columns']['csm_id'] is None:
             col_csm = list(self.train_df.columns)
@@ -230,7 +232,8 @@ class XiRescore:
                 left_on=list(cols_spectra),
                 right_index=True
             )
-            df_batch['top_ranking'] = df_batch[f'{col_rescore}'] == df_batch[f'{col_rescore}_max']
+            df_batch.drop(col_top_ranking, axis=1, inplace=True, errors='ignore')
+            df_batch[col_top_ranking] = df_batch[f'{col_rescore}'] == df_batch[f'{col_rescore}_max']
 
             # Store collected matches
             if type(self._output) is pd.DataFrame:
