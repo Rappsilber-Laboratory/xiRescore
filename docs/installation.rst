@@ -32,13 +32,13 @@ You can either clone the public repository:
 
 .. code-block:: console
 
-    $ git clone git://github.com/z3rone/xirescore
+    $ git clone git://github.com/Rappsilber-Laboratory/xirescore
 
 Or download the `tarball`_:
 
 .. code-block:: console
 
-    $ curl -OJL https://github.com/z3rone/xirescore/tarball/master
+    $ curl -OJL https://github.com/Rappsilber-Laboratory/xirescore/tarball/master
 
 Once you have a copy of the source, you can install it with:
 
@@ -47,5 +47,5 @@ Once you have a copy of the source, you can install it with:
     $ python setup.py install
 
 
-.. _Github repo: https://github.com/z3rone/xirescore
-.. _tarball: https://github.com/z3rone/xirescore/tarball/master
+.. _Github repo: https://github.com/Rappsilber-Laboratory/xirescore
+.. _tarball: https://github.com/Rappsilber-Laboratory/xirescore/tarball/master
