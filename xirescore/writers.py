@@ -3,7 +3,8 @@ import pandas as pd
 from xirescore.DBConnector import DBConnector
 from pathlib import Path
 from xirescore.readers import get_source_type
-
+from xirescore.DBConnector import last_resultset_id_written
+from xirescore.df_serializing import serialize_columns
 
 def append_rescorings(output, df: pd.DataFrame, options=dict(), logger=None):
     output_type = get_source_type(output)
@@ -23,10 +24,12 @@ def append_rescorings(output, df: pd.DataFrame, options=dict(), logger=None):
 
 
 def append_parquet(output, df: pd.DataFrame, compression='GZIP'):
+    df = serialize_columns(df)
     fastparquet.write(
         output,
         data=df,
         compression=compression,
+        write_index=False,
         append=Path(output).is_file(),
     )
 
@@ -64,10 +67,10 @@ def append_db(output, df: pd.DataFrame, options, logger=None):
         c for c in df.columns
         if str(c).startswith(f'{col_rescore}_') or c == col_rescore
     ]
-    if db.last_resultset_id_written is None:
+    if last_resultset_id_written is None:
         # Create new resultset
         score_names = [c for c in df.columns if str(c).startswith(col_rescore)]
-        search_ids = search_ids=df['search_id'].drop_duplicates().values
+        search_ids = df['search_id'].drop_duplicates().values
         resultset_name_join = ';'.join(
             df['resultset_name'].drop_duplicates().values
         )
@@ -81,5 +84,5 @@ def append_db(output, df: pd.DataFrame, options, logger=None):
         )
         logger.info(f'Create resultset `{resultset_id}`')
     else:
-        resultset_id = db.last_resultset_id_written
+        resultset_id = last_resultset_id_written
     db.write_resultmatches(df, feature_cols=cols_scores, resultset_id=resultset_id)
