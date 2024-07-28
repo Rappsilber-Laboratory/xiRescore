@@ -1,14 +1,48 @@
+"""
+Readers for data inputs
+"""
+import random
+
 import pandas as pd
 from xirescore.DBConnector import DBConnector
 from collections.abc import Sequence
 from fastparquet import ParquetFile as FPParquetFile
-from pyarrow.parquet import ParquetFile as PAParquetFile
+from pyarrow.parquet import ParquetDataset as PAParquetDataset
+import pyarrow.compute as pc
+import pyarrow
 from math import ceil
 import multiprocess as mp
 from time import sleep
 
 
-def read_spectra_ids(path, spectra_cols=None) -> pd.DataFrame:
+_dbs = dict()
+
+
+def _get_db(hostname,
+           port,
+           username,
+           password,
+           database,
+           logger=None,
+           random_seed=random.randint(0, 2**32-1)):
+    if (hostname, port, username, password, database) not in _dbs:
+        _dbs[
+            (hostname, port, username, password, database)
+        ] = DBConnector(
+            username=username,
+            password=password,
+            hostname=hostname,
+            port=port,
+            database=database,
+            logger=logger,
+            random_seed=random_seed,
+        )
+    return _dbs[
+        (hostname, port, username, password, database)
+    ]
+
+
+def read_spectra_ids(path, spectra_cols=None, logger=None, random_seed=None) -> pd.DataFrame:
     if type(path) is pd.DataFrame:
         return path.loc[:, spectra_cols]\
             .drop_duplicates()\
@@ -36,12 +70,14 @@ def read_spectra_ids(path, spectra_cols=None) -> pd.DataFrame:
             .to_records(index=False)
     if file_type == 'db':
         db_user, db_pass, db_host, db_port, db_db, rs_ids = parse_db_path(path)
-        db = DBConnector(
+        db = _get_db(
             username=db_user,
             password=db_pass,
             hostname=db_host,
             port=db_port,
-            database=db_db
+            database=db_db,
+            logger=logger,
+            random_seed=random_seed
         )
         return db.read_spectrum_ids(resultset_ids=rs_ids) \
             .loc[:, ['spectrum_id']] \
@@ -65,7 +101,8 @@ def read_spectra_range(input: str | pd.DataFrame,
                        spectra_from: Sequence[Sequence],
                        spectra_to: Sequence[Sequence],
                        spectra_cols: Sequence = None,
-                       logger=None):
+                       logger=None,
+                       random_seed=None):
     # Handle input DF
     if type(input) is pd.DataFrame:
         filters = (
@@ -80,22 +117,9 @@ def read_spectra_range(input: str | pd.DataFrame,
     if file_type == 'tsv':
         return read_spectra_range_csv(input, spectra_from, spectra_to, sep='\t', spectra_cols=spectra_cols)
     if file_type == 'db':
-        return read_spectra_range_db(input, spectra_from, spectra_to, logger=logger)
+        return read_spectra_range_db(input, spectra_from, spectra_to, logger=logger, random_seed=random_seed)
     if file_type == 'parquet':
         return read_spectra_range_parquet(input, spectra_from, spectra_to, spectra_cols=spectra_cols)
-
-
-def get_spectra_range_queue(input: str | pd.DataFrame,
-                            ranges,
-                            spectra_cols: Sequence = None,
-                            logger=None):
-    res_queue = mp.Queue()
-    p = mp.Process(
-        target=spectra_range_prefetcher,
-        args=(input, ranges, res_queue, spectra_cols, logger)
-    )
-    p.start()
-    return res_queue
 
 
 def spectra_range_prefetcher(input: str | pd.DataFrame,
@@ -116,9 +140,16 @@ def spectra_range_prefetcher(input: str | pd.DataFrame,
         res_queue.put(res)
 
 
-def read_spectra_db(path, spectra: Sequence[Sequence]):
+def read_spectra_db(path, spectra: Sequence[Sequence], random_seed=None):
     db_user, db_pass, db_host, db_port, db_db, rs_ids = parse_db_path(path)
-    db = DBConnector(db_user, db_pass, db_host, db_port, db_db)
+    db = _get_db(
+        username=db_user,
+        password=db_pass,
+        hostname=db_host,
+        port=db_port,
+        database=db_db,
+        random_seed=random_seed
+    )
     return db.read_resultsets(
         resultset_ids=rs_ids,
         spectrum_ids=[
@@ -128,14 +159,15 @@ def read_spectra_db(path, spectra: Sequence[Sequence]):
     )
 
 
-def read_spectra_range_db(path, spectra_from, spectra_to, logger):
+def read_spectra_range_db(path, spectra_from, spectra_to, logger, random_seed=None):
     db_user, db_pass, db_host, db_port, db_db, rs_ids = parse_db_path(path)
-    db = DBConnector(
+    db = _get_db(
         username=db_user,
         password=db_pass,
         hostname=db_host,
         port=db_port,
         database=db_db,
+        random_seed=random_seed,
         logger=logger,
     )
     return db.read_spectra_range(
@@ -157,7 +189,7 @@ def read_spectra_parquet(path, spectra: Sequence[Sequence], spectra_cols: Sequen
     ]
 
     df = pd.read_parquet(path, filters=filters)
-    return df
+    return df.reset_index(drop=True)
 
 
 def read_spectra_range_parquet(path,
@@ -182,7 +214,7 @@ def read_spectra_range_parquet(path,
                 df[filters]
             ]
         )
-    return res_df.copy()
+    return res_df.reset_index(drop=True).copy()
 
 
 def read_spectra_csv(path, spectra: Sequence[Sequence], spectra_cols: Sequence, sep=',', chunksize=500_000):
@@ -203,7 +235,7 @@ def read_spectra_csv(path, spectra: Sequence[Sequence], spectra_cols: Sequence, 
                 df[filters]
             ]
         )
-    return res_df.copy()
+    return res_df.reset_index(drop=True).copy()
 
 
 def read_spectra_range_csv(path,
@@ -227,11 +259,11 @@ def read_spectra_range_csv(path,
                 df[filters]
             ]
         )
-    return res_df.copy()
+    return res_df.reset_index(drop=True).copy()
 
 
 def get_source_type(path: str):
-    if path.lower().endswith('.parquet'):
+    if path.lower().endswith('.parquet') or path.lower().endswith('.parquet/'):
         return 'parquet'
     if path.startswith('xi2resultsets://'):
         return 'db'
@@ -262,7 +294,8 @@ def parse_db_path(path):
 def read_top_sample(input_data,
                     sample=1_000_000,
                     top_ranking_col='top_ranking',
-                    logger=None):
+                    logger=None,
+                    random_seed=None):
     if type(input_data) is pd.DataFrame:
         sample_min = min(
             len(input_data[input_data[top_ranking_col]]),
@@ -278,12 +311,13 @@ def read_top_sample(input_data,
         return read_top_sample_csv(input_data, sep='\t', sample=sample, top_ranking_col=top_ranking_col)
     if file_type == 'db':
         db_user, db_pass, db_host, db_port, db_db, rs_ids = parse_db_path(input_data)
-        db = DBConnector(
+        db = _get_db(
             username=db_user,
             password=db_pass,
             hostname=db_host,
             port=db_port,
             database=db_db,
+            random_seed=random_seed,
             logger=logger,
         )
         return db.read_resultsets(
@@ -296,27 +330,41 @@ def read_top_sample(input_data,
         return read_top_sample_parquet(input_data, sample=sample, top_ranking_col=top_ranking_col)
 
 
-def read_top_sample_parquet(path, sample, top_ranking_col='top_ranking', random_state=0):
-    n_row_groups = PAParquetFile(path).num_row_groups
-    parquet_file = FPParquetFile(path)
+def read_top_sample_parquet(path: str,
+                            sample: int,
+                            top_ranking_col='top_ranking',
+                            batch_size=500_000,
+                            random_state=random.randint(0, 2**32-1)):
+    parquet_file = PAParquetDataset(path)
+    n_parts = 0
+    for f in parquet_file.fragments:
+        f: pyarrow.dataset.ParquetFileFragment
+        n_parts += f.num_row_groups
     res_df = pd.DataFrame()
-    filters = [[(top_ranking_col, '==', True)]]
-    for df in parquet_file.iter_row_groups(filters=filters):
-        df: pd.DataFrame
-        n_group_samples = min(
-            sample / n_row_groups,
-            len(df)
-        )
-        res_df = pd.concat(
-            [
-                res_df,
-                df.sample(n_group_samples, random_state=random_state)
-            ]
-        )
-    return res_df
+    top_filter = pc.field(top_ranking_col)
+    for frag in parquet_file.fragments:
+        for batch in frag.to_batches(filter=top_filter, batch_size=batch_size):
+            df = batch.to_pandas()
+            df: pd.DataFrame
+            n_group_samples = min(
+                int(sample / n_parts),
+                len(df)
+            )
+            res_df = pd.concat(
+                [
+                    res_df,
+                    df.sample(n_group_samples, random_state=random_state)
+                ]
+            )
+    return res_df.reset_index(drop=True)
 
 
-def read_top_sample_csv(path, sample, sep=',', chunksize=5_000_000, top_ranking_col='top_ranking', random_state=0):
+def read_top_sample_csv(path,
+                        sample,
+                        sep=',',
+                        chunksize=5_000_000,
+                        top_ranking_col='top_ranking',
+                        random_state=random.randint(0, 2**32-1)):
     n_rows = sum(1 for _ in open(path, 'rb'))
     n_chunks = ceil(n_rows / sample)
     res_df = pd.DataFrame()
@@ -339,4 +387,4 @@ def read_top_sample_csv(path, sample, sep=',', chunksize=5_000_000, top_ranking_
         sample,
         len(res_df)
     )
-    return res_df.sample(final_sample, random_state=random_state)
+    return res_df.sample(final_sample, random_state=random_state).reset_index(drop=True)

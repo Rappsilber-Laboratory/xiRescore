@@ -1,12 +1,47 @@
+"""
+Writers for data outputs
+"""
 import fastparquet
 import pandas as pd
 from xirescore.DBConnector import DBConnector
 from pathlib import Path
 from xirescore.readers import get_source_type
 from xirescore.df_serializing import serialize_columns
+import random
 
 
-def append_rescorings(output, df: pd.DataFrame, options=dict(), logger=None):
+_dbs = dict()
+
+
+def _get_db(hostname,
+           port,
+           username,
+           password,
+           database,
+           logger=None,
+           random_seed=random.randint(0, 2**32-1)):
+    if (hostname, port, username, password, database) not in _dbs:
+        _dbs[
+            (hostname, port, username, password, database)
+        ] = DBConnector(
+            username=username,
+            password=password,
+            hostname=hostname,
+            port=port,
+            database=database,
+            logger=logger,
+            random_seed=random_seed,
+        )
+    return _dbs[
+        (hostname, port, username, password, database)
+    ]
+
+
+def append_rescorings(output,
+                      df: pd.DataFrame,
+                      options=dict(),
+                      logger=None,
+                      random_seed=random.randint(0,2**32-1)):
     output_type = get_source_type(output)
     if output_type == 'csv':
         append_csv(output, df)
@@ -20,6 +55,7 @@ def append_rescorings(output, df: pd.DataFrame, options=dict(), logger=None):
             df=df,
             options=options,
             logger=logger,
+            random_seed=random_seed,
         )
 
 
@@ -51,17 +87,18 @@ def parse_db_path(path):
     return db_user, db_pass, db_host, db_port, db_db
 
 
-def append_db(output, df: pd.DataFrame, options, logger=None):
+def append_db(output, df: pd.DataFrame, options, logger=None, random_seed=random.randint(0, 2**32-1)):
     col_rescore = options['output']['columns']['rescore']
 
     db_user, db_pass, db_host, db_port, db_db = parse_db_path(output)
-    db = DBConnector(
+    db = _get_db(
         username=db_user,
         password=db_pass,
         hostname=db_host,
         port=db_port,
         database=db_db,
         logger=logger,
+        random_seed=random_seed,
     )
     cols_scores = [
         c for c in df.columns

@@ -1,3 +1,6 @@
+"""
+Connector for xiSearch2 databases
+"""
 import logging
 
 from sqlalchemy import (
@@ -38,6 +41,7 @@ _TABLES = [
 _cache_dict = dict()
 last_resultset_id_written = None
 
+
 class DBConnector:
     def __init__(self,
                  hostname: str,
@@ -45,6 +49,7 @@ class DBConnector:
                  username: str,
                  password: str,
                  database: str,
+                 random_seed: int = None,
                  logger: logging.Logger = None):
         if logger is None:
             logging.basicConfig(
@@ -73,6 +78,18 @@ class DBConnector:
                 autoload_with=self.engine,
                 quote=False
             )
+        if random_seed is None:
+            random_seed = random.randint(0, 2**32-1)
+        self._random_seed = random_seed
+        self._random_ctr = 0
+
+    def _random_choice(self, choices):
+        rand_state = random.getstate()
+        random.seed(self._random_seed + self._random_ctr)
+        self._random_ctr += 1
+        val = random.choice(choices)
+        random.setstate(rand_state)
+        return val
 
     def _cache_load(self, func_name, args):
         global _cache_dict
@@ -575,7 +592,7 @@ class DBConnector:
         )[2:].zfill(len_timestamp)
         len_rand = 32 - len_timestamp - len_leading_f
         random_hex = ''.join(
-            random.choice('0123456789abcdef')
+            self._random_choice('0123456789abcdef')
             for _ in range(len_rand)
         )
         resultset_id = ('f' * len_leading_f) + timestamp + random_hex
@@ -774,10 +791,18 @@ class DBConnector:
         self.psycopg.close()
 
 
-def Table(name, *args, **kw):
-    """Return an SQLAlchemy table but that uses the lower case table name.
+def Table(name: str, *args, **kw):
+    """
+    Return an SQLAlchemy table but that uses the lower case table name.
     This is a workaround for the "quote=False" argument not working properly for the postgresql
     dialect in SQLAlchemy.
-    :param name: name of the table - will be forwarded as lower case string.
+
+    :param name: Name of the table. Will be forwarded as lower case string.
+    :type name: str
+    :param *args: Arguments to be passed to the SQLAlchemy Table constructor.
+    :param *kw: Keyword arguments to be passed to the SQLAlchemy Table constructor.
+
+    :returns: SQLAlchemy Table
+    :rtype: Table
     """
     return SATable(name.lower(), *args, **kw)
