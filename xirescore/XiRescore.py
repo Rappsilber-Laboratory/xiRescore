@@ -102,8 +102,9 @@ class XiRescore:
                 self._logger
             )
         self.train_df = self._normalize_and_cleanup(train_df)
-        cols_features = self._get_features(self.train_df)
+        cols_features = self._get_features()
 
+        self._logger.info("Perform hyperparameter optimization")
         model_params = get_hyperparameters(
             train_df=self.train_df,
             cols_features=cols_features,
@@ -112,9 +113,10 @@ class XiRescore:
             loglevel=self._loglevel,
         )
 
+        self._logger.info("Train models")
         self.models, self.splits = training.train(
             train_df=self.train_df,
-            cols_features=self._get_features(self.train_df),
+            cols_features=self._get_features(),
             clf_params=model_params,
             logger=self._logger,
             options=self._options,
@@ -124,7 +126,7 @@ class XiRescore:
         """
         Normalize the features and drop NaN-values if necessary.
         """
-        features = self._get_features(df)
+        features = self._get_features()
         df_features = df[features]
 
         std_scaler = StandardScaler()
@@ -143,17 +145,17 @@ class XiRescore:
         random.setstate(state)
         return val
 
-    def _get_features(self, df):
+    def _get_features(self):
         features_const = self._options['input']['columns']['features']
         feat_prefix = self._options['input']['columns']['feature_prefix']
         features_prefixes = [
-            c for c in df.columns if str(c).startswith(feat_prefix)
+            c for c in self.train_df.columns if str(c).startswith(feat_prefix)
         ]
         features = features_const + features_prefixes
 
         n_all_featrues = len(features)
         features = [
-            f for f in features if not any(np.isnan(df[f].values))
+            f for f in features if not any(np.isnan(self.train_df[f].values))
         ]
         n_dropped_features = n_all_featrues - len(features)
 
@@ -204,6 +206,7 @@ class XiRescore:
                 logger=self._logger,
                 random_seed=self._true_random()
             )
+            self._logger.info(f'Batch contains {len(df_batch)} samples')
 
             # Rescore batch
             df_batch = self.rescore_df(df_batch)
@@ -255,7 +258,7 @@ class XiRescore:
         df = self._normalize_and_cleanup(df)
 
         # Get feature columns
-        feat_cols = self._get_features(df)
+        feat_cols = self._get_features()
 
         # Rescore DF
         df_scores = rescoring.rescore(
