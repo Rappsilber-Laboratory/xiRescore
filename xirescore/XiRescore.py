@@ -243,6 +243,7 @@ class XiRescore:
         cols_spectra = self._options['input']['columns']['spectrum_id']
         col_rescore = self._options['output']['columns']['rescore']
         col_top_ranking = self._options['input']['columns']['top_ranking']
+        max_jobs = self._options['rescoring']['max_jobs']
         apply_logit = self._options['rescoring']['logit_result']
         if self._options['input']['columns']['csm_id'] is None:
             col_csm = list(self.train_df.columns)
@@ -261,7 +262,8 @@ class XiRescore:
             self.models,
             df=df[feat_cols],
             rescore_col=col_rescore,
-            apply_logit=apply_logit
+            apply_logit=apply_logit,
+            max_cpu=max_jobs
         )
 
         self._logger.info('Merge new scores into original data')
