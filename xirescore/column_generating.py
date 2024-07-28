@@ -5,7 +5,7 @@ from xirescore.bi_fdr import self_or_between_mp, calculate_bi_fdr
 def generate(df, options: dict, do_self_between=False, do_fdr=False) -> pd.DataFrame:
     input_cols = options['input']['columns']
     cols_spectra = options['input']['columns']['spectrum_id']
-    col_score = options['output']['columns']['score']
+    col_score = options['input']['columns']['score']
     # Generate top_ranking
     if input_cols['top_ranking'] not in df.columns:
         df_max = df.groupby(cols_spectra).agg(max=(f'{col_score}', 'max')).rename(
@@ -48,10 +48,12 @@ def generate(df, options: dict, do_self_between=False, do_fdr=False) -> pd.DataF
     # Calculate fdr from self_between and score
     if do_fdr and input_cols['fdr'] not in df.columns:
         df.loc[
-            df[input_cols['top_ranking']],
+            df[input_cols['top_ranking']].astype(bool),
             input_cols['fdr']
         ] = calculate_bi_fdr(
-            df,
+            df[
+                df[input_cols['top_ranking']].astype(bool)
+            ],
             score_col=input_cols['score'],
             decoy_class=input_cols['decoy_class'],
             fdr_group_col=input_cols['self_between'],
