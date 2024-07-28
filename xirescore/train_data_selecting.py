@@ -35,7 +35,7 @@ def select(input_data, options, logger):
     seed = options['rescoring']['random_seed']
     col_self_between = options['input']['columns']['self_between']
     col_fdr = options['input']['columns']['fdr']
-    col_native_score = options['input']['columns']['native_score']
+    col_native_score = options['input']['columns']['score']
     col_target = options['input']['columns']['target']
     fdr_cutoff = options['rescoring']['train_fdr_threshold']
     val_self = options['input']['constants']['self']
