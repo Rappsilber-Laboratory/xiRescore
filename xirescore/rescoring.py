@@ -7,8 +7,15 @@ import scipy
 import logging
 
 
-def rescore(models, df, rescore_col, apply_logit=False, logger=logging.getLogger(__name__)):
-    n_procs = int(mp.cpu_count() - 1)
+def rescore(models,
+            df,
+            rescore_col,
+            apply_logit=False,
+            max_cpu=-1,
+            logger=logging.getLogger(__name__)):
+    n_procs = max_cpu
+    if n_procs < 1:
+        n_procs = int(mp.cpu_count() - 1)
     n_models = len(models)
     n_dataslices = ceil(n_procs/n_models)
     slice_size = ceil(len(df) / n_dataslices)
@@ -18,7 +25,8 @@ def rescore(models, df, rescore_col, apply_logit=False, logger=logging.getLogger
     dataslices = [
         df.iloc[
             i*slice_size:(i+1)*slice_size
-        ] for i in range(n_dataslices)
+        ]
+        for i in range(n_dataslices)
     ]
 
     # Apply each classifier to each data slice
