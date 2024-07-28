@@ -263,6 +263,9 @@ class XiRescore:
             rescore_col=col_rescore,
             apply_logit=apply_logit
         )
+
+        self._logger.info('Merge new scores into original data')
+
         df = df.merge(
             df_scores,
             left_index=True,
@@ -271,6 +274,7 @@ class XiRescore:
         )
 
         # Rescore training data only with test fold classifier
+        self._logger.info('Choose right score for training samples')
         df_slice = self.train_df.loc[:, col_csm].copy()
         df_slice[f'{col_rescore}_slice'] = -1
         for i, (_, idx_test) in enumerate(self.splits):
@@ -286,7 +290,10 @@ class XiRescore:
             f'{col_rescore}_slice'
         ] = -1
 
-        df.loc[df[f'{col_rescore}_slice'] > -1, col_rescore] = df.loc[
+        df.loc[
+            df[f'{col_rescore}_slice'] > -1,
+            col_rescore
+        ] = df.loc[
             df[f'{col_rescore}_slice'] > -1
         ].apply(
             _select_right_score,
@@ -295,6 +302,7 @@ class XiRescore:
         )
 
         # Calculate top_ranking
+        self._logger.info('Calculate top ranking scores')
         df_top_rank = df.groupby(cols_spectra).agg(max=(f'{col_rescore}', 'max')).rename(
             {'max': f'{col_rescore}_max'}, axis=1)
         df = df.merge(
