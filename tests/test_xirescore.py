@@ -7,6 +7,8 @@ import logging
 import tempfile
 import subprocess
 import os
+from pyarrow.parquet import ParquetDataset as PAParquetDataset
+import pyarrow.compute as pc
 
 from xirescore.XiRescore import XiRescore
 
@@ -19,7 +21,7 @@ def test_full_db_rescoring():
     logger.info('Start full DB rescoring test')
     options = {
         'rescoring': {
-            'spectra_batch_size': 25_000  # Rescore in 4 batches
+            'spectra_batch_size': 100
         }
     }
     rescorer = XiRescore(
@@ -57,7 +59,7 @@ def test_full_parquet_rescoring():
                 }
             },
             'rescoring': {
-                'spectra_batch_size': 25_000  # Rescore in 4 batches
+                'spectra_batch_size': 25_000
             }
         }
 
@@ -68,6 +70,46 @@ def test_full_parquet_rescoring():
             logger=logger,
         )
         rescorer.run()
+
+
+@pytest.mark.parquet
+def test_full_db_parquet_rescoring():
+    with tempfile.TemporaryDirectory(prefix='pytest_xirescore_') as tmpdirname:
+        logging.basicConfig(
+            level=logging.DEBUG,
+            format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+        )
+        logger = logging.getLogger(__name__)
+        logger.setLevel(logging.DEBUG)
+        logger.info('Start full parquet rescoring test')
+        logger.info(f'Write results to {tmpdirname}')
+
+        options = {
+            'rescoring': {
+                'spectra_batch_size': 50_000
+            }
+        }
+
+        rescorer = XiRescore(
+            input_path='./fixtures/db_dir.parquet/',
+            output_path=f'{tmpdirname}/result.parquet',
+            options=options,
+            logger=logger,
+        )
+        rescorer.run()
+
+        in_len = 0
+        input_file = PAParquetDataset('./fixtures/db_dir.parquet/')
+        cl_filter = pc.field('base_sequence_p2') != pc.scalar('')
+        for f in input_file.fragments:
+            in_len += f.count_rows(filter=cl_filter)
+
+        res_len = 0
+        result_file = PAParquetDataset(f'{tmpdirname}/result.parquet')
+        for f in result_file.fragments:
+            res_len += f.count_rows()
+
+        assert in_len == res_len
 
 
 @pytest.mark.csv
