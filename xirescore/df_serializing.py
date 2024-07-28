@@ -33,16 +33,19 @@ def serialize_columns(df):
         # Take the non-NaN value found
         col_row = col_row.iloc[0]
         if type(col_row[c]) is uuid.UUID:
+            df[df[c].isna()] = ''
             df[c] = df[c].astype(str, errors='ignore')
         elif type(col_row[c]) is str:
             pass
         elif isinstance(col_row[c], Iterable):
+            df[df[c].isna()] = ''
             df[c] = df[c].apply(
                 lambda x: None if x is None else ';'.join(np.array(x).astype(str))
             )
         elif np.issubdtype(type(col_row[c]), np.generic):
             pass
         else:
+            df[df[c].isna()] = ''
             df[c] = df[c].astype(str, errors='ignore')
     df.columns = df.columns.map(str)
     return df
