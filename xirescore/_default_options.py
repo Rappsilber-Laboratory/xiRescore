@@ -43,9 +43,6 @@ default_options = {
             # target-decoy ("TD") or decoy-decoy ("DD")
             'decoy_class': 'decoy_class',
 
-            # Native main score. Used for FDR calculation.
-            'native_score': 'match_score',
-
             # Feature columns prefix. All columns starting with this prefix
             # will be considered feature columns.
             'feature_prefix': 'feature_',
