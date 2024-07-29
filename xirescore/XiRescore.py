@@ -96,12 +96,12 @@ class XiRescore:
         """
         self._logger.info('Start training')
         if train_df is None:
-            train_df = train_data_selecting.select(
+            self.train_df = train_data_selecting.select(
                 self._input,
                 self._options,
                 self._logger
             )
-        self.train_df = self._normalize_and_cleanup(train_df)
+        self.train_df = self._normalize_and_cleanup(self.train_df)
         cols_features = self._get_features()
 
         self._logger.info("Perform hyperparameter optimization")
@@ -286,6 +286,7 @@ class XiRescore:
         for i, (_, idx_test) in enumerate(self.splits):
             df_slice.loc[idx_test, f'{col_rescore}_slice'] = i
 
+        self._logger.info('Merge slice info into batch')
         df = df.merge(
             df_slice,
             how='left',
@@ -296,6 +297,7 @@ class XiRescore:
             f'{col_rescore}_slice'
         ] = -1
 
+        self._logger.info('Pick the correct score')
         df.loc[
             df[f'{col_rescore}_slice'] > -1,
             col_rescore
@@ -316,7 +318,6 @@ class XiRescore:
             left_on=list(cols_spectra),
             right_index=True
         )
-        df.drop(col_top_ranking, axis=1, inplace=True, errors='ignore')
         df[col_top_ranking] = df[f'{col_rescore}'] == df[f'{col_rescore}_max']
         return df
 
