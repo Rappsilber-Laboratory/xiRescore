@@ -598,7 +598,7 @@ class DBConnector:
         resultset_id = ('f' * len_leading_f) + timestamp + random_hex
         return resultset_id
 
-    def create_resultset(self, resultset_name, score_names, main_score, config, search_ids, rs_type='xiML'):
+    def create_resultset(self, resultset_name, score_names, main_score, config, search_ids, rs_type='xiRescore'):
         global last_resultset_id_written
         tables = self._get_tables()
         resultset_id = self._get_tailing_uuid()
@@ -661,7 +661,7 @@ class DBConnector:
         df = df.replace({np.nan: None})
         resultset_names = df['resultset_name'].sort_values().drop_duplicates().to_list()
         resultset_name = ';'.join(resultset_names)
-        resultset_name = f'xiML({resultset_name})'
+        resultset_name = f'xiRescore({resultset_name})'
 
         rstype_id = self._get_rstype_id()
 
@@ -740,7 +740,7 @@ class DBConnector:
             with psycopg.cursor() as cursor:
                 cursor.copy_expert("COPY resultmatch FROM STDIN (FORMAT CSV, HEADER true)", f)
 
-    def _get_rstype_id(self, name='xiML'):
+    def _get_rstype_id(self, name='xiRescore'):
         self.logger.debug('Fetch resultsettype table')
         with self.engine.connect() as conn:
             tables = self._get_tables()
