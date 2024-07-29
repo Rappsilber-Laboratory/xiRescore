@@ -207,7 +207,7 @@ class XiRescore:
                 random_seed=self._true_random()
             )
             self._logger.info(f'Batch contains {len(df_batch)} samples')
-            self._logger.debug(f'Batch uses approx. {df_batch.memory_usage()/1024:.2f}MB of RAM')
+            self._logger.debug(f'Batch uses approx. {df_batch.memory_usage().sum()/1024/1024}MB of RAM')
 
             # Rescore batch
             df_batch = self.rescore_df(df_batch)
