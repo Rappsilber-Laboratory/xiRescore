@@ -60,10 +60,7 @@ def main():
         options=options,
         logger=logger,
     )
-    try:
-        rescorer.run()
-    except Exception as e:
-        logger.fatal(f'Uncaught exception: {e}')
+    rescorer.run()
 
 
 if __name__ == "__main__":
