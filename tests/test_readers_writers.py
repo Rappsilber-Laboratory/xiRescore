@@ -12,6 +12,7 @@ def test_db_input():
 
     # Read spectra IDs
     spectra_list = readers.read_spectra_ids(input_db)
+    spectra_list.sort()
     assert spectra_list.shape[0] > 0
 
     # Read spectra range
