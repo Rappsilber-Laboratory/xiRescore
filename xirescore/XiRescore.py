@@ -272,37 +272,40 @@ class XiRescore:
 
         self._logger.info('Merge new scores into original data')
 
-        df = df.merge(
-            df_scores,
-            left_index=True,
-            right_index=True,
-            validate='1:1',
-        )
-
         # Rescore training data only with test fold classifier
-        self._logger.info('Construct training data slices')
-        df_slice = self.train_df.loc[:, col_csm].copy()
+        self._logger.info('Reconstruct training data slices')
+        cols_merge = list(set(col_csm+cols_spectra))
+        df_slice = self.train_df.loc[:, cols_merge].copy()
         df_slice[f'{col_rescore}_slice'] = -1
         for i, (_, idx_test) in enumerate(self.splits):
             df_slice.loc[idx_test, f'{col_rescore}_slice'] = i
 
+        self._logger.info('Add merge columns to scores DataFrame')
+        df_scores = pd.concat(
+            [
+                df_scores,
+                df[cols_merge]
+            ],
+            axis=1
+        )
+
         self._logger.info('Merge slice info into batch')
-        df = df.merge(
+        df_scores = df_scores.merge(
             df_slice,
             how='left',
             validate='1:1',
         )
-        df.loc[
-            df[f'{col_rescore}_slice'].isna(),
+        df_scores.loc[
+            df_scores[f'{col_rescore}_slice'].isna(),
             f'{col_rescore}_slice'
         ] = -1
 
         self._logger.info('Pick the correct score')
-        df.loc[
-            df[f'{col_rescore}_slice'] > -1,
+        df_scores.loc[
+            df_scores[f'{col_rescore}_slice'] > -1,
             col_rescore
-        ] = df.loc[
-            df[f'{col_rescore}_slice'] > -1
+        ] = df_scores.loc[
+            df_scores[f'{col_rescore}_slice'] > -1
         ].apply(
             _select_right_score,
             col_rescore=col_rescore,
@@ -311,14 +314,23 @@ class XiRescore:
 
         # Calculate top_ranking
         self._logger.info('Calculate top ranking scores')
-        df_top_rank = df.groupby(cols_spectra).agg(max=(f'{col_rescore}', 'max')).rename(
+        df_top_rank = df_scores.groupby(cols_spectra).agg(max=(f'{col_rescore}', 'max')).rename(
             {'max': f'{col_rescore}_max'}, axis=1)
-        df = df.merge(
+        df_scores = df_scores.merge(
             df_top_rank,
             left_on=list(cols_spectra),
             right_index=True
         )
-        df[col_top_ranking] = df[f'{col_rescore}'] == df[f'{col_rescore}_max']
+        df_scores[col_top_ranking] = df_scores[f'{col_rescore}'] == df_scores[f'{col_rescore}_max']
+
+        self._logger.info("Join scores and ranking back")
+        df = pd.concat(
+            [
+                df.drop(col_top_ranking, axis=1, errors='ignore'),
+                df_scores.drop(cols_merge, axis=1, errors='ignore')
+            ],
+            axis=1
+        )
         return df
 
     def get_rescored_output(self):
