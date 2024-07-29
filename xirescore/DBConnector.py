@@ -570,8 +570,8 @@ class DBConnector:
         search_ids, resultset_ids = self._get_search_resset_ids(resultset_ids=resultset_ids)
         # Construct optional filter
         matchedspec_where = (
-            (self.tables['matchedspectrum'].c.spectrum_id <= spectra_from) &
-            (self.tables['matchedspectrum'].c.spectrum_id >= spectra_to)
+            (self.tables['matchedspectrum'].c.spectrum_id >= spectra_from) &
+            (self.tables['matchedspectrum'].c.spectrum_id <= spectra_to)
         )
         # Get filtered resultsets
         df = self._get_full_resultmatch_df(
