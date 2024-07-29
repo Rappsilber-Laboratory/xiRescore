@@ -61,6 +61,7 @@ def main():
         logger=logger,
     )
     rescorer.run()
+    logger.info("Done.")
 
 
 if __name__ == "__main__":
