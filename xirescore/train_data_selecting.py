@@ -47,9 +47,8 @@ def select(input_data, options, logger):
     df = generate_columns(df, options=options, do_fdr=True, do_self_between=True)
 
     # Selection mode: self-targets-all-decoys
+    logger.info(f'Use selection mode {selection_mode}')
     if selection_mode == 'self-targets-all-decoys':
-        logger.info(f'Use selection mode {selection_mode}')
-
         # Create filters
         filter_self = df[col_self_between] == val_self
         filter_fdr = df[col_fdr] <= fdr_cutoff
@@ -100,8 +99,6 @@ def select(input_data, options, logger):
 
     # Selection mode: self-targets-capped-decoys
     elif selection_mode == 'self-targets-capped-decoys':
-        logger.info(f'Use selection mode {selection_mode}')
-
         # Create filters
         filter_self = df[col_self_between] == val_self
         filter_fdr = df[col_fdr] <= fdr_cutoff
