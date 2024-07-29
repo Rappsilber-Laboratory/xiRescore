@@ -55,6 +55,9 @@ class XiRescore:
                  logger=None,
                  loglevel=logging.DEBUG):
         # Apply override default options with user-supplied options
+        if 'model_params' in options.get('rescoring', dict()):
+            # Discard default model_params if new ones are provided
+            del self._options['rescoring']['model_params']
         self._options = options_merger.merge(
             self._options,
             options

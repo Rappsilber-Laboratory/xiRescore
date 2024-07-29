@@ -7,9 +7,7 @@ import logging
 import tempfile
 import subprocess
 import os
-from pyarrow.parquet import ParquetDataset as PAParquetDataset
-import pyarrow.compute as pc
-
+import numpy as np
 from xirescore.XiRescore import XiRescore
 
 
@@ -68,6 +66,54 @@ def test_full_parquet_rescoring():
             },
             'rescoring': {
                 'spectra_batch_size': 25_000
+            }
+        }
+
+        rescorer = XiRescore(
+            input_path='./fixtures/test_data.parquet',
+            output_path=f'{tmpdirname}/result.parquet',
+            options=options,
+            logger=logger,
+        )
+        rescorer.run()
+
+
+@pytest.mark.parquet
+def test_full_svc_rescoring():
+    with tempfile.TemporaryDirectory(prefix='pytest_xirescore_') as tmpdirname:
+        logging.basicConfig(
+            level=logging.DEBUG,
+            format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+        )
+        logger = logging.getLogger(__name__)
+        logger.setLevel(logging.DEBUG)
+        logger.info('Start full parquet rescoring test')
+        logger.info(f'Write results to {tmpdirname}')
+
+        options = {
+            'input': {
+                'columns': {
+                    'features': [
+                        'match_score',
+                        'better_score',
+                        'worse_score',
+                        'useless_score_uni',
+                        'useless_score_norm',
+                        'conditional_score',
+                    ]
+                }
+            },
+            'rescoring': {
+                'model_class': 'svm',
+                'model_name': 'SVC',
+                'model_params': {
+                    'kernel': ['rbf'],
+                    'gamma': [1e-2, 1e-3, 1e-4, "auto"],
+                    'C': [5, 8, 10, 15],
+                    'probability': [True],
+                    "class_weight": ["balanced", None, {0: 2, 1: 1}],
+                    "tol": [100*np.finfo(np.double).eps]
+                }
             }
         }
 
