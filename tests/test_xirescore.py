@@ -216,6 +216,7 @@ def test_full_df_rescoring():
     assert len(df) == len(df_out)
 
 
+@pytest.mark.cli
 def test_full_cli_parquet_rescoring():
     with tempfile.TemporaryDirectory(prefix='pytest_xirescore_') as tmpdirname:
         logging.basicConfig(
