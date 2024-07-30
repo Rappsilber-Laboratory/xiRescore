@@ -76,7 +76,7 @@ setup(
     include_package_data=True,
     keywords='xirescore',
     name='xirescore',
-    packages=find_packages(include=['xirescore', 'xirescore.*']),
+    packages=find_packages(include=['xirescore', 'xirescore.*'], exclude=["tests"]),
     test_suite='tests',
     tests_require=test_requirements,
     url='https://github.com/z3rone/xirescore',
