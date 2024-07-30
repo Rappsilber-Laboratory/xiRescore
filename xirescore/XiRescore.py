@@ -14,6 +14,7 @@ import logging
 import random
 from math import ceil
 from sklearn.preprocessing import StandardScaler
+from sklearn.base import BaseEstimator
 from collections.abc import Collection
 
 options_merger = Merger(
@@ -46,7 +47,7 @@ class XiRescore:
     """
     K-fold splits of model training. Kept to not rescore training samples with models they have been trained on.
     """
-    models = []
+    models: list[BaseEstimator] = []
     """
     Trained models from the f-fold cross-validation.
     """
@@ -56,8 +57,23 @@ class XiRescore:
                  input_path,
                  output_path=None,
                  options=dict(),
+                 state=None,
                  logger=None,
                  loglevel=logging.DEBUG):
+        """
+        Initialize rescorer
+
+        :param input_path: Path to input file/DB or an input DataFrame.
+        :type input_path: str|DataFrame
+        :param output_path: Path to the output file/DB or ``None`` if ``get_rescored_output()`` will be used.
+        :type output_path: str, optional
+        :param options: :ref:`options`
+        :type options: dict, optional
+        :param logger: Logger to be used. If ``None`` a new logger will be created.
+        :type logger: Logger, optional
+        :param loglevel: Log level to be used with new logger.
+        :type loglevel: int, optional
+        """
         # Apply override default options with user-supplied options
         if 'model_params' in options.get('rescoring', dict()):
             # Discard default model_params if new ones are provided
@@ -73,6 +89,10 @@ class XiRescore:
         np.random.seed(seed)
         random.seed(seed)
 
+        if state is not None:
+            self.models = state['models']
+            self.splits = state['splits']
+
         # Store input data path
         self._input = input_path
         if output_path is None:
@@ -86,7 +106,7 @@ class XiRescore:
             self._logger = logger
         self._loglevel = loglevel
 
-    def run(self):
+    def run(self) -> None:
         """
         Run training and rescoring of the input data and write to output
         """
@@ -129,6 +149,18 @@ class XiRescore:
             options=self._options,
         )
 
+    def get_rescoring_state(self) -> dict:
+        """
+        Get state of the current instance to use it later to recreate identical instance.
+
+        :returns: Models and k-fold slices
+        :rtype: dict
+        """
+        return {
+            'splits': self.splits,
+            'models': self.models,
+        }
+
     def _normalize_and_cleanup(self, df):
         """
         Normalize the features and drop NaN-values if necessary.
@@ -170,7 +202,7 @@ class XiRescore:
 
         return features
 
-    def rescore(self):
+    def rescore(self) -> None:
         """
         Run rescoring on input data.
         """
@@ -343,6 +375,8 @@ class XiRescore:
     def get_rescored_output(self) -> pd.DataFrame:
         """
         Get the rescoring results when no output was defined
+
+        :returns: Rescoring results
         :rtype: DataFrame
         """
         if type(self._output) is pd.DataFrame:

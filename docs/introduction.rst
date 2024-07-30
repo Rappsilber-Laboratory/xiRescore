@@ -11,6 +11,7 @@ How It Works
 The basic method works as follows:
 
 * Select samples with decoys and low FDR targets
+* Use these samples for hyperparameter optimization
 * Use these samples to train multiple classifiers using k-fold crossvalidation
 * Rescore all samples by using the average score of all classifiers
 * For the k-fold samples, use only the score of the classifier they were not trained with
