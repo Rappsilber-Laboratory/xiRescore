@@ -16,7 +16,7 @@ The basic method works as follows:
 * Rescore all samples by using the average score of all classifiers
 * For the k-fold samples, use only the score of the classifier they were not trained with
 
-To support large datasets that do not fit into memory, xiRescore rescored the input data in batches and write the results to disk before continuing with the next batch.
+To support large datasets that do not fit into memory, xiRescore rescores the input data in batches and write the results to disk before continuing with the next batch.
 
 -----------
 How to cite
