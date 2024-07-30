@@ -119,7 +119,7 @@ class XiRescore:
         Run training on input data or on the passed DataFrame if provided.
 
         :param train_df: Data to be used training instead of input data.
-        :type DataFrame: DataFrame, optional
+        :type train_df: DataFrame, optional
         """
         self._logger.info('Start training')
         if train_df is None:
