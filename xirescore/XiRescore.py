@@ -36,7 +36,7 @@ options_merger = Merger(
 
 
 class XiRescore:
-    _options = default_options
+    _options = default_options.copy()
     _logger = logging.getLogger(__name__)
     _true_random_ctr = 0
     train_df: pd.DataFrame
