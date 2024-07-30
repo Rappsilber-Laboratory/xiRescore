@@ -740,7 +740,7 @@ class DBConnector:
             with psycopg.cursor() as cursor:
                 cursor.copy_expert("COPY resultmatch FROM STDIN (FORMAT CSV, HEADER true)", f)
 
-    def _get_rstype_id(self, name='xiRescore'):
+    def _get_rstype_id(self, name='xiRescore', create=True):
         self.logger.debug('Fetch resultsettype table')
         with self.engine.connect() as conn:
             tables = self._get_tables()
@@ -750,7 +750,21 @@ class DBConnector:
                 tables['resultsettype'].c.name == name
             )
             id_res = conn.execute(rstype_id_query).mappings().all()
+        if len(id_res) == 0 and create:
+            return self._create_rstype(name)
         return id_res[0]['id']
+
+    def _create_rstype(self, name):
+        self.logger.debug(f'Create rstype {name}')
+        with self.engine.connect() as conn:
+            rstype_query = insert(
+                tables['resultsettype']
+            ).values({
+                'name': name,
+            })
+            conn.execute(rstype_query)
+            conn.commit()
+        return _get_rstype_id(name, create=False):
 
     def _get_tables(self):
         tables = dict()
