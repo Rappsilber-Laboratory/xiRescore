@@ -40,7 +40,7 @@ class XiRescore:
     _true_random_ctr = 0
     train_df: pd.DataFrame
     """
-    Data used for training the models. Kept to not rescore training samples with models they have been trained on.
+    Data used for k-fold cross-validation.
     """
     splits: Collection[tuple[pd.Index, pd.Index]]
     """
@@ -48,8 +48,9 @@ class XiRescore:
     """
     models = []
     """
-    Trained models from the f-fold cross-validation
+    Trained models from the f-fold cross-validation.
     """
+
 
     def __init__(self,
                  input_path,
@@ -97,8 +98,8 @@ class XiRescore:
         """
         Run training on input data or on the passed DataFrame if provided.
 
-        Parameters:
-        - train_df: Data to be used training instead of input data.
+        :param train_df: Data to be used training instead of input data.
+        :type DataFrame: DataFrame, optional
         """
         self._logger.info('Start training')
         if train_df is None:
