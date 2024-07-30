@@ -47,6 +47,9 @@ class XiRescore:
     K-fold splits of model training. Kept to not rescore training samples with models they have been trained on.
     """
     models = []
+    """
+    Trained models from the f-fold cross-validation
+    """
 
     def __init__(self,
                  input_path,
@@ -336,7 +339,11 @@ class XiRescore:
         )
         return df
 
-    def get_rescored_output(self):
+    def get_rescored_output(self) -> pd.DataFrame:
+        """
+        Get the rescoring results when no output was defined
+        :rtype: DataFrame
+        """
         if type(self._output) is pd.DataFrame:
             return self._output
         else:
