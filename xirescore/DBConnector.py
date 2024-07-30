@@ -756,6 +756,7 @@ class DBConnector:
 
     def _create_rstype(self, name):
         self.logger.debug(f'Create rstype {name}')
+        tables = self._get_tables()
         with self.engine.connect() as conn:
             rstype_query = insert(
                 tables['resultsettype']
