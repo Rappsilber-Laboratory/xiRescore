@@ -335,6 +335,7 @@ class XiRescore:
             how='left',
             validate='1:1',
         )
+        df_scores.index = df.index
         df_scores.loc[
             df_scores[f'{col_rescore}_slice'].isna(),
             f'{col_rescore}_slice'
