@@ -27,7 +27,6 @@ requirements = [
     "pyteomics~=4.6",
     "seaborn~=0.12.2",
     "imblearn~=0.0",
-    "JPype1~=1.4.1",
     "XlsxWriter~=3.1.0",
     "pytest~=8.3.1",
     "pydocstyle~=6.3.0",
