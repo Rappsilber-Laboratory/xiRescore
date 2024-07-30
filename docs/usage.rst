@@ -85,11 +85,13 @@ This example shows how to use xiRescore with a CSV input and Parquet output:
       },
       # ...
   }
+
   rescorer = XiRescore(
       input_path='test_data.csv.gz',
       output_path='result.parquet',
       options=options,
   )
+
   rescorer.run()
 
 
