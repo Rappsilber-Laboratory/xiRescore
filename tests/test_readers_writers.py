@@ -23,16 +23,3 @@ def test_db_input():
     )
 
     assert len(df) > 0
-
-
-def test_parquet_input_output():
-
-    raise Exception("Not implemented yet.")
-
-
-def test_csv_input():
-    raise Exception("Not implemented yet.")
-
-
-def test_df_input():
-    raise Exception("Not implemented yet.")
