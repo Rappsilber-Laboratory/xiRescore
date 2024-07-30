@@ -762,10 +762,11 @@ class DBConnector:
                 tables['resultsettype']
             ).values({
                 'name': name,
+                'id': select(func.max(tables['resultsettype'].c.id)+1),
             })
             conn.execute(rstype_query)
             conn.commit()
-        return _get_rstype_id(name, create=False)
+        return self._get_rstype_id(name, create=False)
 
     def _get_tables(self):
         tables = dict()
