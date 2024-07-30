@@ -17,5 +17,5 @@ To use XiRescore in Python code use the XiRescore class:
    :no-index:
 
 XiRescore accepts an option dictionary as configuration. The passed options will be merged with the default options,
-such that all existing default values or arrays are replaces.
+such that all existing default values or arrays are replaces. A special case are `rescoring.model_params` which replace the default dictionary if provided.
 The available options and default values can be found under :ref:`options`.
