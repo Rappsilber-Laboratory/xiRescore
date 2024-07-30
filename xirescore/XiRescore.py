@@ -16,6 +16,7 @@ from math import ceil
 from sklearn.preprocessing import StandardScaler
 from sklearn.base import BaseEstimator
 from collections.abc import Collection
+import copy
 
 options_merger = Merger(
     # pass in a list of tuple, with the
@@ -36,7 +37,6 @@ options_merger = Merger(
 
 
 class XiRescore:
-    _options = default_options.copy()
     _logger = logging.getLogger(__name__)
     _true_random_ctr = 0
     train_df: pd.DataFrame
@@ -75,6 +75,7 @@ class XiRescore:
         :type loglevel: int, optional
         """
         # Apply override default options with user-supplied options
+        self._options = copy.deepcopy(default_options)
         if 'model_params' in options.get('rescoring', dict()):
             # Discard default model_params if new ones are provided
             del self._options['rescoring']['model_params']
