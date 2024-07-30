@@ -764,7 +764,7 @@ class DBConnector:
             })
             conn.execute(rstype_query)
             conn.commit()
-        return _get_rstype_id(name, create=False):
+        return _get_rstype_id(name, create=False)
 
     def _get_tables(self):
         tables = dict()
