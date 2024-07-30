@@ -80,6 +80,6 @@ setup(
     test_suite='tests',
     tests_require=test_requirements,
     url='https://github.com/z3rone/xirescore',
-    version='1.0.0a1',
+    version='1.0.0a2',
     zip_safe=False,
 )
