@@ -1,4 +1,4 @@
-from xirescore import cli
+from cli
 
 
 def main():
