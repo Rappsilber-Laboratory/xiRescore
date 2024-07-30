@@ -1,5 +1,5 @@
 =======================
-Handling Large Datasets
+Handling large datasets
 =======================
 
 When handling datasets that might exceed the memory of your machine you should use xiRescore's file source/target capabilities.

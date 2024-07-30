@@ -5,7 +5,7 @@ Introduction
 XiRescore is a tool to improve the separation of tarets and decoy for cross-link mass spectrometry matches (CSMs) using provided features and a native score.
 
 ------------
-How It Works
+How it works
 ------------
 
 The basic method works as follows:
@@ -19,7 +19,7 @@ The basic method works as follows:
 To support large datasets that do not fit into memory, xiRescore rescored the input data in batches and write the results to disk before continuing with the next batch.
 
 -----------
-How To Cite
+How to cite
 -----------
 
 Coming soon...

@@ -25,7 +25,7 @@ The available options and default values can be found under :ref:`options`.
   However, providing them might increase performance.
 
 -----------------
-DataFrame Example
+DataFrame example
 -----------------
 
 This example shows how to use xiRescore directly in code with a DataFrame as input and no file or DB output:
@@ -61,7 +61,7 @@ This example shows how to use xiRescore directly in code with a DataFrame as inp
 
 
 -------------------
-CSV/Parquet Example
+CSV/Parquet example
 -------------------
 
 This example shows how to use xiRescore with a CSV input and Parquet output:
@@ -94,7 +94,7 @@ This example shows how to use xiRescore with a CSV input and Parquet output:
 
 
 -----------
-CLI Example
+CLI example
 -----------
 
 This example shows how to xiRescore from command line:
