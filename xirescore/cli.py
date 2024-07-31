@@ -1,10 +1,13 @@
 from xirescore.XiRescore import XiRescore
+import xirescore
 
 import argparse
 import yaml
 import ast
 import logging
 import logging_loki
+import os
+import sys
 
 
 def main():
@@ -13,7 +16,7 @@ def main():
 
     # Define CLI arguments
     parser.add_argument('-i', action='store', dest='input_path', help='input path',
-                        type=str, required=True)
+                        type=str, required=False)
     parser.add_argument('-o', action='store', dest='output_path', help='output path',
                         type=str, required=False)
     parser.add_argument('-c', action='store', dest='config_file', help='config file',
@@ -24,9 +27,23 @@ def main():
                         type=str, required=False)
     parser.add_argument('--loki-job-id', action='store', dest='loki_job_id', help='Loki job ID',
                         default="", type=str, required=False)
+    parser.add_argument('--version', action='store_true', dest='print_version', help='print version')
 
     # Parse arguments
     args = parser.parse_args()
+
+    if args.print_version:
+        print(xirescore.__version__)
+        os._exit(os.EX_OK)
+
+    if args.input_path is None:
+        print('xirescore: error: the following arguments are required: -i', file=sys.stderr)
+        parser.print_help()
+        os._exit(os.EX_USAGE)
+    if args.output_path is None:
+        print('xirescore: error: the following arguments are required: -o', file=sys.stderr)
+        parser.print_help()
+        os._exit(os.EX_USAGE)
 
     # Load config
     if args.config_file is not None:
