@@ -7,7 +7,7 @@ xiRescore
         :target: https://pypi.python.org/pypi/xirescore
 
 .. image:: https://readthedocs.org/projects/xirescore/badge/?version=stable
-        :target: https://xirescore.readthedocs.io/en/latest/?version=stable
+        :target: https://xirescore.readthedocs.io/en/stable/?version=stable
         :alt: Documentation Status
 
 
