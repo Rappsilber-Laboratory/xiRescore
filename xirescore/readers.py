@@ -380,7 +380,7 @@ def read_top_sample_csv(path,
         prop_chunks = (i_chunk + 1) / n_chunks
         subsample_size = min(
             len(res_df),
-            sample * prop_chunks,
+            int(sample * prop_chunks),
         )
         res_df = res_df.sample(subsample_size, random_state=random_state)
     final_sample = min(
