@@ -32,8 +32,3 @@ python:
     - requirements: docs/requirements.txt
     - method: pip
       path: .
-
-defaults:
-  build:
-    tags: true
-    branches: false
