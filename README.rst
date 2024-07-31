@@ -6,8 +6,8 @@ xiRescore
 .. image:: https://img.shields.io/pypi/v/xirescore.svg
         :target: https://pypi.python.org/pypi/xirescore
 
-.. image:: https://readthedocs.org/projects/xirescore/badge/?version=latest
-        :target: https://xirescore.readthedocs.io/en/latest/?version=latest
+.. image:: https://readthedocs.org/projects/xirescore/badge/?version=stable
+        :target: https://xirescore.readthedocs.io/en/latest/?version=stable
         :alt: Documentation Status
 
 
