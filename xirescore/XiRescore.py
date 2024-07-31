@@ -330,12 +330,13 @@ class XiRescore:
         )
 
         self._logger.info('Merge slice info into batch')
+        df_scores['__index_backup__'] = df_scores.index
         df_scores = df_scores.merge(
             df_slice,
             how='left',
             validate='1:1',
         )
-        df_scores.index = df.index
+        df_scores.set_index('__index_backup__', inplace=True)
         df_scores.loc[
             df_scores[f'{col_rescore}_slice'].isna(),
             f'{col_rescore}_slice'
