@@ -194,13 +194,26 @@ class XiRescore:
         ]
         features = features_const + features_prefixes
 
-        n_all_featrues = len(features)
-        features = [
-            f for f in features if not any(np.isnan(self.train_df[f].values))
+        absent_features = [
+            f
+            for f in features
+            if f not in self.train_df.columns
         ]
-        n_dropped_features = n_all_featrues - len(features)
+        nan_features = [
+            f
+            for f in features
+            if any(np.isnan(self.train_df[f].values))
+        ]
+        features = [
+            f
+            for f in features
+            if f not in (absent_features + nan_features)
+        ]
 
-        self._logger.info(f"Dropped {n_dropped_features} columns with NaN-values of {n_all_featrues}.")
+        if len(nan_features) > 0:
+            self._logger.warning(f"Dropped features with NaN values: {nan_features}")
+        if len(absent_features) > 0:
+            self._logger.warning(f"Did not find some features: {absent_features}")
 
         return features
 
