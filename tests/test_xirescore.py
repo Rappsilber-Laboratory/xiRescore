@@ -12,6 +12,7 @@ from xirescore.XiRescore import XiRescore
 
 
 @pytest.mark.db
+@pytest.mark.slow
 def test_full_db_rescoring():
     logger = logging.getLogger(__name__)
     logging.basicConfig()
@@ -83,6 +84,7 @@ def test_full_parquet_rescoring():
 
 @pytest.mark.parquet
 @pytest.mark.svc
+@pytest.mark.slow
 def test_full_svc_rescoring():
     with tempfile.TemporaryDirectory(prefix='pytest_xirescore_') as tmpdirname:
         logging.basicConfig(
