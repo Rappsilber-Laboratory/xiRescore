@@ -37,22 +37,6 @@ options_merger = Merger(
 
 
 class XiRescore:
-    _logger = logging.getLogger(__name__)
-    _true_random_ctr = 0
-    train_df: pd.DataFrame
-    """
-    Data used for k-fold cross-validation.
-    """
-    splits: Collection[tuple[pd.Index, pd.Index]]
-    """
-    K-fold splits of model training. Kept to not rescore training samples with models they have been trained on.
-    """
-    models: list[BaseEstimator] = []
-    """
-    Trained models from the f-fold cross-validation.
-    """
-
-
     def __init__(self,
                  input_path,
                  output_path=None,
@@ -105,7 +89,24 @@ class XiRescore:
         # Use supplied logger if present
         if logger is not None:
             self._logger = logger
+        else:
+            self._logger = logging.getLogger(__name__)
+
         self._loglevel = loglevel
+        self._true_random_ctr = 0
+
+        self.train_df: pd.DataFrame = None
+        """
+        Data used for k-fold cross-validation.
+        """
+        self.splits: Collection[tuple[pd.Index, pd.Index]] = []
+        """
+        K-fold splits of model training. Kept to not rescore training samples with models they have been trained on.
+        """
+        self.models: list[BaseEstimator] = []
+        """
+        Trained models from the f-fold cross-validation.
+        """
 
     def run(self) -> None:
         """
