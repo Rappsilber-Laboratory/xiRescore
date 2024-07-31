@@ -82,6 +82,7 @@ def test_full_parquet_rescoring():
 
 
 @pytest.mark.parquet
+@pytest.mark.svc
 def test_full_svc_rescoring():
     with tempfile.TemporaryDirectory(prefix='pytest_xirescore_') as tmpdirname:
         logging.basicConfig(
