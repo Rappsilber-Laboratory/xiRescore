@@ -76,8 +76,8 @@ def test_full_parquet_rescoring():
             logger=logger,
         )
         rescorer.run()
-        df_in = pd.read_csv('./fixtures/test_data.parquet')
-        df_out = pd.read_csv(f'{tmpdirname}/result.parquet')
+        df_in = pd.read_parquet('./fixtures/test_data.parquet')
+        df_out = pd.read_parquet(f'{tmpdirname}/result.parquet')
         assert len(df_in) == len(df_out)
 
 
