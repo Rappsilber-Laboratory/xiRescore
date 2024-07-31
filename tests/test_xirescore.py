@@ -76,6 +76,9 @@ def test_full_parquet_rescoring():
             logger=logger,
         )
         rescorer.run()
+        df_in = pd.read_csv('./fixtures/test_data.parquet')
+        df_out = pd.read_csv(f'{tmpdirname}/result.parquet')
+        assert len(df_in) == len(df_out)
 
 
 @pytest.mark.parquet
@@ -124,6 +127,9 @@ def test_full_svc_rescoring():
             logger=logger,
         )
         rescorer.run()
+        df_in = pd.read_csv('./fixtures/test_data.parquet')
+        df_out = pd.read_csv(f'{tmpdirname}/result.parquet')
+        assert len(df_in) == len(df_out)
 
 
 @pytest.mark.csv
@@ -163,6 +169,9 @@ def test_full_csv_rescoring():
             logger=logger,
         )
         rescorer.run()
+        df_in = pd.read_csv('./fixtures/test_data.csv.gz')
+        df_out = pd.read_csv(f'{tmpdirname}/result.csv.gz')
+        assert len(df_in) == len(df_out)
 
 
 @pytest.mark.df
