@@ -8,6 +8,7 @@ from pathlib import Path
 from xirescore.readers import get_source_type
 from xirescore.df_serializing import serialize_columns
 import random
+import os
 
 
 _dbs = dict()
@@ -74,6 +75,7 @@ def append_csv(output, df: pd.DataFrame, sep=','):
     df.to_csv(
         output,
         mode='a',
+        header=not os.path.isfile(output),
         sep=sep
     )
 
