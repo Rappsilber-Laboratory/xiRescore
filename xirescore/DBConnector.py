@@ -32,10 +32,9 @@ _TABLES = [
     'scorename',
     'resultsearch',
     'match',
-    'protein',
-    'modifiedpeptide',
-    'peptideposition',
     'matchedspectrum',
+    'peptide_protein_agg',
+    'matchedspectrum_agg',
 ]
 
 _cache_dict = dict()
@@ -234,7 +233,7 @@ class DBConnector:
         resultmatch_scores_df.drop('scores', inplace=True, axis=1)
 
         # Merge with peptide/protein information
-        peptide_df = self._get_peptide_protein_df(search_ids)
+        peptide_df = self._get_peptide_protein_agg_df(search_ids)
         peptide1_df = peptide_df.rename(
             {c: f'{c}_p1' for c in peptide_df.columns},
             axis=1
@@ -246,11 +245,11 @@ class DBConnector:
         resultmatch_peptides_scores_df = resultmatch_scores_df.merge(
             peptide1_df,
             left_on=['pep1_id'],
-            right_on=['peptide_id_p1'],
+            right_on=['mod_pep_id_p1'],
         ).merge(
             peptide2_df,
             left_on=['pep2_id'],
-            right_on=['peptide_id_p2'],
+            right_on=['mod_pep_id_p2'],
         )
 
         # Merge with resultset information
@@ -291,75 +290,13 @@ class DBConnector:
         )
         return df
 
-    def _get_protein_df(self, search_ids, use_cache=True) -> pd.DataFrame:
-        self.logger.debug('Fetch protein table')
-        with self.engine.connect() as conn:
-            ids_query = select(
-                self.tables['protein'],
-            ).where(
-                self.tables['protein'].c.search_id.in_(search_ids),
-            )
-            cache_res = self._cache_load('_get_protein_df', (search_ids,))
-            if use_cache and cache_res is not None:
-                res = cache_res
-            else:
-                res = conn.execute(ids_query).mappings().all()
-                self._cache_store('_get_protein_df', (search_ids,), res)
-        return pd.DataFrame(res).rename({
-            'id': 'protein_id',
-            'name': 'protein_name',
-            'sequence': 'protein_sequence',
-        }, axis=1)
-
-    def _get_peptide_df(self, search_ids, use_cache=True) -> pd.DataFrame:
-        self.logger.debug('Fetch modifiedpeptide table')
-        with self.engine.connect() as conn:
-            ids_query = select(
-                self.tables['modifiedpeptide'],
-            ).where(
-                self.tables['modifiedpeptide'].c.search_id.in_(search_ids),
-            )
-            cache_res = self._cache_load('_get_peptide_df', (search_ids,))
-            if use_cache and cache_res is not None:
-                res = cache_res
-            else:
-                res = conn.execute(ids_query).mappings().all()
-                self._cache_store('_get_peptide_df', (search_ids,), res)
-        df = pd.DataFrame(res)
-        df = df.rename({'id': 'peptide_id'}, axis=1)
-
-        # Convert array columns to string
-        df['modification_ids'] = df['modification_ids'].apply(
-            lambda x: ';'.join(np.array(x).astype(str))
-        )
-        df['modification_position'] = df['modification_position'].apply(
-            lambda x: ';'.join(np.array(x).astype(str))
-        )
-        return df
-
-    def _get_peptideposition_df(self, search_ids, use_cache=True) -> pd.DataFrame:
-        self.logger.debug('Fetch peptideposition table')  # FIXME took >20mins
-        with self.engine.connect() as conn:
-            ids_query = select(
-                self.tables['peptideposition'],
-            ).where(
-                self.tables['peptideposition'].c.search_id.in_(search_ids),
-            )
-            cache_res = self._cache_load('_get_peptideposition_df', (search_ids,))
-            if use_cache and cache_res is not None:
-                res = cache_res
-            else:
-                res = conn.execute(ids_query).mappings().all()
-                self._cache_store('_get_peptideposition_df', (search_ids,), res)
-        return pd.DataFrame(res)
-
     def _get_matchedspectrum_df(self, search_ids, use_cache=True) -> pd.DataFrame:
         self.logger.debug('Fetch matchedspectrum table')
         with self.engine.connect() as conn:
             ids_query = select(
-                self.tables['matchedspectrum'],
+                self.tables['matchedspectrum_agg'],
             ).where(
-                self.tables['matchedspectrum'].c.search_id.in_(search_ids)
+                self.tables['matchedspectrum_agg'].c.search_id.in_(search_ids)
             )
             cache_res = self._cache_load('_get_matchedspectrum_df', (search_ids,))
             if use_cache and cache_res is not None:
@@ -381,20 +318,17 @@ class DBConnector:
         self.logger.debug('Fetch matchedspectrum, match, resultmatch tables joined')
         with self.engine.connect() as conn:
             # Spectrum pre-subquery
-            spectrum_preq = select(
-                func.aggregate_strings(
-                    cast(self.tables['matchedspectrum'].c.spectrum_id, String),
-                    ';'
-                ).label('spectrum_id'),
-                self.tables['matchedspectrum'].c.search_id,
-                self.tables['matchedspectrum'].c.match_id,
+            spectrum_agg = select(
+                self.tables['matchedspectrum_agg'].c.spectrum_id,
+                self.tables['matchedspectrum_agg'].c.search_id,
+                self.tables['matchedspectrum_agg'].c.match_id,
             ).where(
-                self.tables['matchedspectrum'].c.search_id.in_(search_ids)
+                self.tables['matchedspectrum_agg'].c.search_id.in_(search_ids)
             )
 
             # Add optional where
             if matchedspec_where is not None:
-                spectrum_preq = spectrum_preq.where(
+                spectrum_preq = spectrum_agg.where(
                     matchedspec_where
                 )
 
@@ -404,13 +338,7 @@ class DBConnector:
                     spectrum_preq.c.spectrum_id.in_(spectrum_ids)
                 )
 
-            # Add grouping
-            spectrum_agg = spectrum_preq.group_by(
-                self.tables['matchedspectrum'].c.match_id,
-                self.tables['matchedspectrum'].c.search_id,
-            )
-
-            spectrum_subq = spectrum_agg.alias('spectrum_subq')
+            spectrum_subq = spectrum_agg.alias('spectrum_agg_subq')
 
             # Match subquery
             match_subq = select(
@@ -516,6 +444,21 @@ class DBConnector:
             ] for rs_id in resultset_ids
         }
 
+    def _get_peptide_protein_agg_df(self, search_ids, use_cache=True):
+        pepprot_query = select(
+            self.tables['peptide_protein_agg'],
+        ).where(
+            self.tables['peptide_protein_agg'].c.search_id.in_(search_ids),
+        )
+        with self.engine.connect() as conn:
+            cache_res = self._cache_load('_get_peptide_protein_agg_df', (search_ids,))
+            if use_cache and cache_res is not None:
+                res = cache_res
+            else:
+                res = conn.execute(pepprot_query).mappings().all()
+                self._cache_store('_get_peptide_protein_agg_df', (search_ids,), res)
+        return pd.DataFrame(res)
+
     def _get_peptide_protein_df(self, search_ids):
         protein_df = self._get_protein_df(search_ids=search_ids)
         peptideposition_df = self._get_peptideposition_df(
@@ -570,8 +513,8 @@ class DBConnector:
         search_ids, resultset_ids = self._get_search_resset_ids(resultset_ids=resultset_ids)
         # Construct optional filter
         matchedspec_where = (
-            (self.tables['matchedspectrum'].c.spectrum_id >= spectra_from) &
-            (self.tables['matchedspectrum'].c.spectrum_id <= spectra_to)
+            (self.tables['matchedspectrum_agg'].c.spectrum_id >= spectra_from) &
+            (self.tables['matchedspectrum_agg'].c.spectrum_id <= spectra_to)
         )
         # Get filtered resultsets
         df = self._get_full_resultmatch_df(
@@ -784,18 +727,12 @@ class DBConnector:
         self.logger.debug('Fetch matchedspectrum table')
         with self.engine.connect() as conn:
             spectrum_query = select(
-                func.aggregate_strings(
-                    cast(self.tables['matchedspectrum'].c.spectrum_id, String),
-                    ';'
-                ).label('spectrum_id')
+                self.tables['matchedspectrum'].c.spectrum_id,
             ).where(
                 self.tables['matchedspectrum'].c.search_id.in_(search_ids)
-            ).group_by(
-                self.tables['matchedspectrum'].c.match_id,
-                self.tables['matchedspectrum'].c.search_id,
             )
             res = conn.execute(spectrum_query).mappings().all()
-        df = pd.DataFrame(res)
+        df = pd.DataFrame(res).drop_duplicates()
         return serialize_columns(df)
 
     def get_last_resultset_id_written(self):
