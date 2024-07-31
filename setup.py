@@ -53,6 +53,8 @@ setup(
     author="Falk Boudewijn Schimweg",
     author_email='f.schimweg@win.tu-berlin.de',
     python_requires='>=3.6',
+    use_scm_version=True,
+    setup_requires=['setuptools_scm'],
     classifiers=[
         'Development Status :: 2 - Pre-Alpha',
         'Intended Audience :: Developers',
@@ -80,6 +82,5 @@ setup(
     test_suite='tests',
     tests_require=test_requirements,
     url='https://github.com/z3rone/xirescore',
-    version='1.0.0a2',
     zip_safe=False,
 )

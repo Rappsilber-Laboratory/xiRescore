@@ -32,3 +32,6 @@ xirescore = "xirescore.__main__:main"
 Homepage = "https://github.com/Rappsilber-Laboratory/xiRescore"
 Issues = "https://github.com/Rappsilber-Laboratory/xiRescore/issues"
 Documentation = "https://xirescore.readthedocs.io/"
+
+[tool.setuptools_scm]
+version_file = "xirescore/_version.py"

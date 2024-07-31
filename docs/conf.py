@@ -19,6 +19,7 @@
 #
 import os
 import sys
+from importlib.metadata import version as get_version
 sys.path.insert(0, os.path.abspath('..'))
 sys.path.append(os.path.abspath('../..'))
 
