@@ -7,6 +7,17 @@ from tqdm import tqdm
 
 
 def resolve(async_results, show_pbar=True, pbar_args=dict(), logger=None):
+    """
+    Resolve asynchronous results from multiprocessing with progress bar.
+    For compatibility this function returns anything that is not an asynchronous
+    result or and array of these.
+
+    :param async_results: Single async result, list of async results or literals.
+    :type async_results: Any
+
+    :returns: Resolved result(s) or unprocessed ``async_results`` if it's a literal.
+    :rtype: Any
+    """
     if logger is None:
         logger = logging.getLogger(__name__)
     else:
