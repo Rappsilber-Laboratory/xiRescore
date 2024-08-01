@@ -82,4 +82,6 @@ def test_no_overlap_splitting():
         logger.info(f'groups: {groups}')
         # Assert that less that 10% of training samples were lost
         assert len(train_idx) > 0.9*(len(df)-len(test_idx))
+        # Assert that some training samples have been lost
+        assert len(train_idx) < (len(df) - len(test_idx))
     assert len(df) == n_split_samples
