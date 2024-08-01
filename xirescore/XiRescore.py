@@ -377,12 +377,12 @@ class XiRescore:
             left_on=list(cols_spectra),
             right_index=True
         )
-        df_scores[col_top_ranking] = df_scores[f'{col_rescore}'] == df_scores[f'{col_rescore}_max']
+        df_scores[f'{col_rescore}_{col_top_ranking}'] = df_scores[f'{col_rescore}'] == df_scores[f'{col_rescore}_max']
 
         self._logger.info("Join scores and ranking back")
         df = pd.concat(
             [
-                df.drop(col_top_ranking, axis=1, errors='ignore'),
+                df.drop(f'{col_rescore}_{col_top_ranking}', axis=1, errors='ignore'),
                 df_scores.drop(cols_merge, axis=1, errors='ignore')
             ],
             axis=1
