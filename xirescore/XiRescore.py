@@ -202,7 +202,7 @@ class XiRescore:
         nan_features = [
             f
             for f in features
-            if any(np.isnan(self.train_df[f].values))
+            if (f not in absent_features) and any(np.isnan(self.train_df[f].values))
         ]
         features = [
             f
