@@ -8,12 +8,17 @@ from time import sleep
 import pandas as pd
 
 
-def self_or_between(df, col_prot1='protein_p1', col_prot2='protein_p2', str_self='self', str_between='between'):
+def self_or_between(df,
+                    col_prot1='protein_p1',
+                    col_prot2='protein_p2',
+                    str_self='self',
+                    str_between='between',
+                    decoy_adj='REV_'):
     df.loc[:, f'{col_prot1}_arr'] = df.loc[:, col_prot1]\
-        .astype(str).str.replace('REV_', '')\
+        .astype(str).str.replace(decoy_adj, '')\
         .str.split(';').map(np.unique).map(list)
     df.loc[:, f'{col_prot2}_arr'] = df.loc[:, col_prot2]\
-        .astype(str).str.replace('REV_', '')\
+        .astype(str).str.replace(decoy_adj, '')\
         .str.split(';').map(np.unique).map(list)
     df.loc[:, 'proteins_arr'] = (df.loc[:, f'{col_prot1}_arr'] + df.loc[:, f'{col_prot2}_arr'])
     df.loc[:, 'proteins_arr_unique'] = df.loc[:, 'proteins_arr'].map(np.unique)
@@ -33,7 +38,7 @@ def self_or_between(df, col_prot1='protein_p1', col_prot2='protein_p2', str_self
     return df.loc[:, 'is_between'].map({True: str_between, False: str_self})
 
 
-def self_or_between_mp(df, col_prot1='protein_p1', col_prot2='protein_p2'):
+def self_or_between_mp(df, col_prot1='protein_p1', col_prot2='protein_p2', decoy_adj='Rev_'):
     pool_size = min([10,os.cpu_count()])
     slice_size = ceil(len(df)/pool_size)
     cols = [col_prot1, col_prot2]
@@ -47,10 +52,11 @@ def self_or_between_mp(df, col_prot1='protein_p1', col_prot2='protein_p2'):
     with mp.Pool(processes=pool_size) as pool:
         job_self_between = partial(
             self_or_between,
+            decoy_adj=decoy_adj,
             col_prot1=col_prot1,
             col_prot2=col_prot2,
         )
-        map_res = pool.map(self_or_between, df_slices)
+        map_res = pool.map(job_self_between, df_slices)
     return pd.concat(map_res).copy()
 
 

@@ -62,6 +62,9 @@ default_options = {
 
             # Between classification value for column self_between.
             'between': 'between',
+
+            # String added to decoy protein names. Will be removed for self/between classification.
+            'decoy_adjunct': 'REV_',
         },
     },
     'rescoring': {
