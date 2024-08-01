@@ -44,6 +44,7 @@ def generate(df, options: dict, do_self_between=False, do_fdr=False) -> pd.DataF
             df,
             col_prot1=input_cols['protein_p1'],
             col_prot2=input_cols['protein_p2'],
+            decoy_adj=options['input']['constants']['decoy_adjunct'],
         )
     # Calculate fdr from self_between and score
     if do_fdr and input_cols['fdr'] not in df.columns:
