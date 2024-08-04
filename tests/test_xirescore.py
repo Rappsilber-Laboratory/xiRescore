@@ -71,13 +71,13 @@ def test_full_parquet_rescoring():
         }
 
         rescorer = XiRescore(
-            input_path='./fixtures/test_data.parquet',
+            input_path='./tests/fixtures/test_data.parquet',
             output_path=f'{tmpdirname}/result.parquet',
             options=options,
             logger=logger,
         )
         rescorer.run()
-        df_in = pd.read_parquet('./fixtures/test_data.parquet')
+        df_in = pd.read_parquet('./tests/fixtures/test_data.parquet')
         df_out = pd.read_parquet(f'{tmpdirname}/result.parquet')
         assert len(df_in) == len(df_out)
 
@@ -124,13 +124,13 @@ def test_full_svc_rescoring():
         }
 
         rescorer = XiRescore(
-            input_path='./fixtures/test_data.parquet',
+            input_path='./tests/fixtures/test_data.parquet',
             output_path=f'{tmpdirname}/result.parquet',
             options=options,
             logger=logger,
         )
         rescorer.run()
-        df_in = pd.read_parquet('./fixtures/test_data.parquet')
+        df_in = pd.read_parquet('./tests/fixtures/test_data.parquet')
         df_out = pd.read_parquet(f'{tmpdirname}/result.parquet')
         assert len(df_in) == len(df_out)
 
@@ -166,20 +166,20 @@ def test_full_csv_rescoring():
         }
 
         rescorer = XiRescore(
-            input_path='./fixtures/test_data.csv.gz',
+            input_path='./tests/fixtures/test_data.csv.gz',
             output_path=f'{tmpdirname}/result.csv.gz',
             options=options,
             logger=logger,
         )
         rescorer.run()
-        df_in = pd.read_csv('./fixtures/test_data.csv.gz')
+        df_in = pd.read_csv('./tests/fixtures/test_data.csv.gz')
         df_out = pd.read_csv(f'{tmpdirname}/result.csv.gz')
         assert len(df_in) == len(df_out)
 
 
 @pytest.mark.df
 def test_full_df_rescoring():
-    df = pd.read_parquet('./fixtures/test_data.parquet')
+    df = pd.read_parquet('./tests/fixtures/test_data.parquet')
     logging.basicConfig(
         level=logging.DEBUG,
         format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
@@ -249,7 +249,7 @@ def test_full_cli_parquet_rescoring():
         result = subprocess.run(
             [
                 'xirescore',
-                '-i', './fixtures/test_data.parquet',
+                '-i', './tests/fixtures/test_data.parquet',
                 '-o', f'{tmpdirname}/result.parquet',
                 '-C', str(options),
             ],
