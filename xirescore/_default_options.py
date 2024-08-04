@@ -5,6 +5,8 @@ default_options = {
         'columns': {
             # Boolean column indicating if a match has
             # the highest score for the specific spectrum.
+            # If you don't allow for multiple matches for one spectrum
+            # this column would only contain ``True`` values.
             'top_ranking': 'top_ranking',
 
             # The main score to use for FDR calculation and therefore training data selection.

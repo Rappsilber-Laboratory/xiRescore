@@ -145,7 +145,7 @@ class XiRescore:
         self._logger.info("Train models")
         self.models, self.splits = training.train(
             train_df=self.train_df,
-            cols_features=self._get_features(),
+            cols_features=cols_features,
             clf_params=model_params,
             logger=self._logger,
             options=self._options,
@@ -308,7 +308,6 @@ class XiRescore:
         else:
             col_csm = self._options['input']['columns']['csm_id']
 
-
         # Normalize features
         df = self._normalize_and_cleanup(df)
 
@@ -335,18 +334,20 @@ class XiRescore:
             df_slice.loc[idx_test, f'{col_rescore}_slice'] = i
 
         self._logger.info('Add merge columns to scores DataFrame')
-        df_scores = pd.concat(
-            [
-                df_scores,
-                df[cols_merge]
-            ],
-            axis=1
+        df_scores = pd.merge(
+            df_scores,
+            df,
+            left_index=True,
+            right_index=True,
+            validate='1:1',
+            suffixes=('_scores', '')
         )
 
         self._logger.info('Merge slice info into batch')
         df_scores['__index_backup__'] = df_scores.index
         df_scores = df_scores.merge(
             df_slice,
+            on=cols_merge,
             how='left',
             validate='1:1',
         )
@@ -379,15 +380,7 @@ class XiRescore:
         )
         df_scores[f'{col_rescore}_{col_top_ranking}'] = df_scores[f'{col_rescore}'] == df_scores[f'{col_rescore}_max']
 
-        self._logger.info("Join scores and ranking back")
-        df = pd.concat(
-            [
-                df.drop(f'{col_rescore}_{col_top_ranking}', axis=1, errors='ignore'),
-                df_scores.drop(cols_merge, axis=1, errors='ignore')
-            ],
-            axis=1
-        )
-        return df
+        return df_scores
 
     def get_rescored_output(self) -> pd.DataFrame:
         """
