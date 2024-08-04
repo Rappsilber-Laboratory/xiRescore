@@ -4,8 +4,10 @@ from xirescore.bi_fdr import self_or_between_mp, calculate_bi_fdr
 
 def generate(df, options: dict, do_self_between=False, do_fdr=False) -> pd.DataFrame:
     input_cols = options['input']['columns']
-    cols_spectra = options['input']['columns']['spectrum_id']
-    col_score = options['input']['columns']['score']
+    cols_spectra = input_cols['spectrum_id']
+    decoy_p1 = input_cols['decoy_p1']
+    decoy_p2 = input_cols['decoy_p2']
+    col_score = input_cols['score']
     # Generate top_ranking
     if input_cols['top_ranking'] not in df.columns:
         df_max = df.groupby(cols_spectra).agg(max=(f'{col_score}', 'max')).rename(

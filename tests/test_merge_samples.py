@@ -6,6 +6,7 @@ import logging
 import numpy as np
 import random
 from xirescore.XiRescore import XiRescore
+import tempfile
 
 
 def test_merge_samples():
@@ -62,18 +63,24 @@ def test_merge_samples():
             }
         }
     }
-
-    rescorer = XiRescore(
-        input_path=df,
-        options=options,
-        logger=logger,
-    )
-    rescorer.run()
-    df_out = rescorer.get_rescored_output()
-    assert len(df) == len(df_out)
-    assert np.count_nonzero(
-        df['csm_id'] != df['feature_idx']
-    ) == 0
-    assert np.count_nonzero(
-        df['isTT'] != df['feature_isTT']
-    ) == 0
+    with tempfile.TemporaryDirectory(prefix='pytest_xirescore_') as tmpdirname:
+        df.to_csv(f'{tmpdirname}/input.csv.gz')
+        rescorer = XiRescore(
+            input_path=f'{tmpdirname}/input.csv.gz',
+            output_path=f'{tmpdirname}/output.csv.gz',
+            options=options,
+            logger=logger,
+        )
+        rescorer.run()
+        df_out = pd.read_csv(f'{tmpdirname}/output.csv.gz')
+        assert len(df) == len(df_out)
+        assert np.count_nonzero(
+            df_out['isTT'] != df_out['feature_isTT']
+        ) == 0
+        assert np.count_nonzero(
+            df_out['csm_id'] != df_out['feature_idx']
+        ) == 0
+        classifications = df_out['rescore'] > 0
+        assert np.count_nonzero(
+            df_out['isTT'] != classifications
+        ) == 0

@@ -60,13 +60,18 @@ def self_or_between_mp(df, col_prot1='protein_p1', col_prot2='protein_p2', decoy
     return pd.concat(map_res).copy()
 
 
-def calculate_fdr(df, score_col='match_score', decoy_class=None, max_slices=None):
+def calculate_fdr(df,
+                  decoy_p1='decoy_p1',
+                  decoy_p2='decoy_p2',
+                  score_col='match_score',
+                  decoy_class=None,
+                  max_slices=None):
     orig_sorting = df.index
     df_by_score_desc = df.sort_values(score_col, ascending=False)
 
     if decoy_class is None:
-        is_dd = df_by_score_desc.loc[:, 'decoy_p1'] & df_by_score_desc.loc[:, 'decoy_p2']
-        is_tt = (~df_by_score_desc.loc[:, 'decoy_p1']) & (~df_by_score_desc.loc[:, 'decoy_p2'])
+        is_dd = df_by_score_desc.loc[:, decoy_p1] & df_by_score_desc.loc[:, decoy_p2]
+        is_tt = (~df_by_score_desc.loc[:, decoy_p1]) & (~df_by_score_desc.loc[:, decoy_p2])
         is_td = (~is_tt) & (~is_dd)
     else:
         is_dd = df_by_score_desc[decoy_class] == 'DD'
@@ -178,6 +183,8 @@ def calculate_bi_fdr(df,
                      fdr_group_col=None,
                      decoy_class=None,
                      max_slices=None,
+                     decoy_p1='decoy_p1',
+                     decoy_p2='decoy_p2',
                      str_self='self'):
     original_order = df.index
     if fdr_group_col is None:
@@ -191,12 +198,16 @@ def calculate_bi_fdr(df,
         df_by_index.loc[self],
         score_col=score_col,
         decoy_class=decoy_class,
+        decoy_p1=decoy_p1,
+        decoy_p2=decoy_p2,
         max_slices=max_slices
     )
     between_fdr = calculate_fdr(
         df_by_index.loc[~self],
         score_col=score_col,
         decoy_class=decoy_class,
+        decoy_p1=decoy_p1,
+        decoy_p2=decoy_p2,
         max_slices=max_slices
     )
     return pd.concat([self_fdr, between_fdr]).loc[original_order]
