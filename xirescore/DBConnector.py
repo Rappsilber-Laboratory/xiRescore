@@ -715,7 +715,7 @@ class DBConnector:
         rm_df = df.loc[:, rm_df_columns]
         rm_df['scores'] = df[
             feature_cols
-        ].apply(
+        ].astype(float).apply(
             np.array,
             result_type='reduce',
             axis=1
