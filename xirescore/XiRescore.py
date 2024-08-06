@@ -283,10 +283,7 @@ class XiRescore:
 
         # Keep rescored matches when no output is defined
         if type(self._output) is pd.DataFrame:
-            self._output = pd.concat([
-                self._output,
-                df_rescored
-            ])
+            self._output = df_rescored
 
     def rescore_df(self, df: pd.DataFrame) -> pd.DataFrame:
         """
@@ -351,7 +348,7 @@ class XiRescore:
             how='left',
             validate='1:1',
         )
-        df_scores.set_index('__index_backup__', inplace=True)
+        df_scores.set_index('__index_backup__', inplace=True, drop=True)
         df_scores.loc[
             df_scores[f'{col_rescore}_slice'].isna(),
             f'{col_rescore}_slice'
@@ -372,7 +369,8 @@ class XiRescore:
         # Calculate top_ranking
         self._logger.info('Calculate top ranking scores')
         df_top_rank = df_scores.groupby(cols_spectra).agg(max=(f'{col_rescore}', 'max')).rename(
-            {'max': f'{col_rescore}_max'}, axis=1)
+            {'max': f'{col_rescore}_max'}, axis=1
+        ).reset_index()
         df_scores = df_scores.merge(
             df_top_rank,
             left_on=list(cols_spectra),
