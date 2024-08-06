@@ -1,7 +1,6 @@
 import pandas as pd
 from xirescore import readers
 from xirescore.column_generating import generate as generate_columns
-from xirescore.bi_fdr import self_or_between_mp, calculate_bi_fdr
 import logging
 import numpy as np
 
@@ -137,25 +136,35 @@ def select(input_data, options, logger):
         ])
 
         # Scale decoy-x histogram
-        dx_scale_fact = max(
+        dx_scale_fact = min(
             1,
             n_decoy / hist_dx_capped.sum(),
         )
         hist_dx_scaled = (hist_dx_capped * dx_scale_fact).astype(int)
 
-        train_decoys = pd.Index([])
+        train_decoys = pd.DataFrame()
         for i, n in enumerate(hist_dx_scaled):
             if n == 0:
                 continue
             score_min = hist_bins[i]
             score_max = hist_bins[i + 1]
             bins_samples = all_decoy[
-                (all_decoy[col_native_score] >= score_min) & (all_decoy[col_native_score] < score_max)]
-            train_decoys = pd.concat([train_decoys, bins_samples.sample(n=n, random_state=seed)])
+                (all_decoy[col_native_score] >= score_min) & (all_decoy[col_native_score] < score_max)
+            ]
+            train_decoys = pd.concat(
+                [
+                    train_decoys,
+                    bins_samples.sample(n=n, random_state=seed)
+                ]
+            )
 
         logger.info(f'Taking {len(train_decoys)} decoys.')
 
-        return pd.concat([train_self_targets, train_between_targets, train_decoys]).copy()
+        return pd.concat([
+            train_self_targets,
+            train_between_targets,
+            train_decoys]
+        ).copy()
 
     else:
         raise TrainDataError(f"Unknown train data selection mode: {selection_mode}.")
