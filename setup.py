@@ -13,7 +13,7 @@ with open('HISTORY.rst') as history_file:
 requirements = [
     "frosch~=0.1.9",
     "pandas~=2.2.2",
-    "numpy>=1.22.4",
+    "numpy>=1.26.4",
     "PyYAML~=6.0",
     "tabulate~=0.9.0",
     "setuptools~=71.1.0",
