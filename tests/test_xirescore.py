@@ -198,11 +198,13 @@ def test_full_df_rescoring():
                     'useless_score_uni',
                     'useless_score_norm',
                     'conditional_score',
-                ]
-            }
+                ],
+                'score': 'match_score',
+            },
         },
         'rescoring': {
-            'spectra_batch_size': 25_000  # Rescore in 4 batches
+            'spectra_batch_size': 25_000,  # Rescore in 4 batches
+            'train_selection_mode': 'self-targets-capped-decoys'
         }
     }
 
@@ -238,11 +240,12 @@ def test_full_cli_parquet_rescoring():
                         'useless_score_uni',
                         'useless_score_norm',
                         'conditional_score',
-                    ]
-                }
+                    ],
+                    'score': 'match_score'
+                },
             },
             'rescoring': {
-                'spectra_batch_size': 25_000  # Rescore in 4 batches
+                'spectra_batch_size': 25_000,  # Rescore in 4 batches
             }
         }
 
