@@ -130,11 +130,11 @@ def train_fold(features_df, labels_df, fold, params, options, logger: logging.Lo
     test_predictions = clf.predict(fold_test_features_df)
 
     # Evaluate fold model
-    score = metric(fold_test_labels_df, test_predictions)
+    score = metric(fold_test_labels_df, test_predictions, labels=[0, 1])
     accuracy = accuracy_score(fold_test_labels_df, test_predictions, )
     balanced_accuracy = balanced_accuracy_score(fold_test_labels_df, test_predictions, )
     logger.info(f"Score: {score}")
-    logger.info(f"Accuracy: {accuracy}")
-    logger.info(f"Balanced accuracy: {balanced_accuracy}")
+    logger.info(f"Accuracy: {accuracy*100:.2f}%")
+    logger.info(f"Balanced accuracy: {balanced_accuracy*100:.2f}%")
 
     return clf
