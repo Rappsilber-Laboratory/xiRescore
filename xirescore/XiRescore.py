@@ -181,11 +181,7 @@ class XiRescore:
         if self.std_scaler is None:
             self.std_scaler = StandardScaler()
         self.std_scaler.fit(df_features)
-        df_features_scaled = pd.DataFrame(self.std_scaler.transform(df_features))
-
-        for n in df_features_scaled.columns:
-            f = features[n]
-            df.loc[:, f] = df_features_scaled.loc[:, n].to_numpy()
+        df[features] = self.std_scaler.transform(df_features)
 
         return df
 
