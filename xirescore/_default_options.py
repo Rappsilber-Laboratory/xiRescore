@@ -118,6 +118,9 @@ default_options = {
         # This can make the rescore more normally distributed with certain
         # classifiers. (E.g. LinearRegression or SVC)
         'logit_result': True,
+
+        # Scaler to use for the features
+        'scaler': 'StandardScaler',
     },
     'output': {
         'columns': {

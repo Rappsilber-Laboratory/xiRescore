@@ -16,7 +16,7 @@ import logging
 import random
 from math import ceil
 from sklearn.preprocessing import StandardScaler
-from sklearn.base import BaseEstimator
+from sklearn.base import BaseEstimator, TransformerMixin
 from collections.abc import Collection
 import copy
 
@@ -109,7 +109,7 @@ class XiRescore:
         """
         Trained models from the f-fold cross-validation.
         """
-        self.std_scaler: StandardScaler
+        self.scaler: TransformerMixin
         """
         StandardScaler for feature normalization.
         """
@@ -136,18 +136,18 @@ class XiRescore:
         self._logger.info('Start training')
 
         if train_df is None:
-            self.train_df, self.std_scaler = train_data_selecting.select(
+            self.train_df, self.scaler = train_data_selecting.select(
                 self._input,
                 self._options,
                 self._logger
             )
         else:
-            self.std_scaler = get_scaler(train_df, self._options, self._logger)
+            self.scaler = get_scaler(train_df, self._options, self._logger)
 
         self.train_features = get_features(self.train_df, self._options, self._logger)
 
         # Scale features
-        self.train_df[self.train_features] = self.std_scaler.transform(
+        self.train_df[self.train_features] = self.scaler.transform(
             self.train_df[self.train_features]
         )
 
@@ -278,7 +278,7 @@ class XiRescore:
             col_csm = self._options['input']['columns']['csm_id']
 
         # Scale features
-        df[self.train_features] = self.std_scaler.transform(
+        df[self.train_features] = self.scaler.transform(
             df[self.train_features]
         )
 
@@ -348,10 +348,13 @@ class XiRescore:
         df_scores[f'{col_rescore}_{col_top_ranking}'] = df_scores[f'{col_rescore}'] == df_scores[f'{col_rescore}_max']
         df_scores.set_index('__index_backup__', inplace=True, drop=True)
 
-        self._logger.info('Reverse standard scaling')
-        df_scores[self.train_features] = self.std_scaler.inverse_transform(
-            df_scores[self.train_features]
-        )
+        if getattr(self.scaler, 'inverse_transform', False):
+            self._logger.info('Reverse standard scaling')
+            df_scores[self.train_features] = self.scaler.inverse_transform(
+                df_scores[self.train_features]
+            )
+        else:
+            logging.warning('Scaler is missing ``inverse_transform()`` method')
 
         return df_scores
 

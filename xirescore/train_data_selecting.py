@@ -43,6 +43,7 @@ def select(input_data, options, logger):
 
     # Read input data
     df = readers.read_top_sample(input_data, logger=logger, sample=top_sample_size)
+    logger.debug(f'Fetched {len(df)} top ranking samples')
 
     # Generate needed columns
     df = generate_columns(df, options=options, do_fdr=True, do_self_between=True)
