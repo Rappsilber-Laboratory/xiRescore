@@ -111,7 +111,7 @@ class XiRescore:
         """
         self.scaler: TransformerMixin
         """
-        StandardScaler for feature normalization.
+        Scaler for feature normalization.
         """
         self.train_features: list = []
         """
@@ -349,7 +349,7 @@ class XiRescore:
         df_scores.set_index('__index_backup__', inplace=True, drop=True)
 
         if getattr(self.scaler, 'inverse_transform', False):
-            self._logger.info('Reverse standard scaling')
+            self._logger.info('Reverse scaling')
             df_scores[self.train_features] = self.scaler.inverse_transform(
                 df_scores[self.train_features]
             )

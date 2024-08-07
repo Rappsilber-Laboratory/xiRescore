@@ -206,6 +206,10 @@ def test_full_df_rescoring():
             'spectra_batch_size': 25_000,  # Rescore in 4 batches
             'train_selection_mode': 'self-targets-capped-decoys',
             'scaler': 'RobustScaler',
+            'scaler': 'QuantileTransformer',
+            'scaler_params': {
+                'output_distribution': 'normal'
+            },
         }
     }
 
