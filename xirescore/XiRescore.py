@@ -348,7 +348,6 @@ class XiRescore:
             how='left',
             validate='1:1',
         )
-        df_scores.set_index('__index_backup__', inplace=True, drop=True)
         df_scores.loc[
             df_scores[f'{col_rescore}_slice'].isna(),
             f'{col_rescore}_slice'
@@ -373,10 +372,10 @@ class XiRescore:
         ).reset_index()
         df_scores = df_scores.merge(
             df_top_rank,
-            left_on=list(cols_spectra),
-            right_index=True
+            on=list(cols_spectra)
         )
         df_scores[f'{col_rescore}_{col_top_ranking}'] = df_scores[f'{col_rescore}'] == df_scores[f'{col_rescore}_max']
+        df_scores.set_index('__index_backup__', inplace=True, drop=True)
 
         return df_scores
 
