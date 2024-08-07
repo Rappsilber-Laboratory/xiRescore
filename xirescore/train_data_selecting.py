@@ -1,6 +1,7 @@
 import pandas as pd
 from xirescore import readers
 from xirescore.column_generating import generate as generate_columns
+from xirescore.feature_scaling import get_scaler
 import logging
 import numpy as np
 
@@ -44,6 +45,9 @@ def select(input_data, options, logger):
 
     # Generate needed columns
     df = generate_columns(df, options=options, do_fdr=True, do_self_between=True)
+
+    # Get scaler
+    scaler = get_scaler(df, options, logger)
 
     # Selection mode: self-targets-all-decoys
     logger.info(f'Use selection mode {selection_mode}')
@@ -89,7 +93,7 @@ def select(input_data, options, logger):
         train_between_decoys = train_between_decoys.sample(sample_min, random_state=seed)
         logger.info(f'Taking {len(train_between_decoys)} between decoys.')
 
-        return pd.concat([
+        train_data_df = pd.concat([
             train_self_targets,
             train_between_targets,
             train_self_decoys,
@@ -160,14 +164,15 @@ def select(input_data, options, logger):
 
         logger.info(f'Taking {len(train_decoys)} decoys.')
 
-        return pd.concat([
+        train_data_df = pd.concat([
             train_self_targets,
             train_between_targets,
             train_decoys]
         ).copy()
-
     else:
         raise TrainDataError(f"Unknown train data selection mode: {selection_mode}.")
+
+    return train_data_df, scaler
 
 
 class TrainDataError(Exception):

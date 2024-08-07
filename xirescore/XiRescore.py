@@ -5,6 +5,8 @@ from xirescore import training
 from xirescore import readers
 from xirescore import writers
 from xirescore import rescoring
+from xirescore.feature_extracting import get_features
+from xirescore.feature_scaling import get_scaler
 from xirescore.hyperparameter_optimizing import get_hyperparameters
 
 import pandas as pd
@@ -95,7 +97,7 @@ class XiRescore:
         self._loglevel = loglevel
         self._true_random_ctr = 0
 
-        self.train_df: pd.DataFrame = None
+        self.train_df: pd.DataFrame
         """
         Data used for k-fold cross-validation.
         """
@@ -107,9 +109,13 @@ class XiRescore:
         """
         Trained models from the f-fold cross-validation.
         """
-        self.std_scaler: StandardScaler = None
+        self.std_scaler: StandardScaler
         """
         StandardScaler for feature normalization.
+        """
+        self.train_features: list = []
+        """
+        Features extracted from training data.
         """
 
     def run(self) -> None:
@@ -129,22 +135,26 @@ class XiRescore:
         """
         self._logger.info('Start training')
 
-        # Reset StandardScaler
-        self.std_scaler: StandardScaler = None
-
         if train_df is None:
-            self.train_df = train_data_selecting.select(
+            self.train_df, self.std_scaler = train_data_selecting.select(
                 self._input,
                 self._options,
                 self._logger
             )
-        self.train_df = self._scale_and_cleanup(self.train_df)
-        cols_features = self._get_features()
+        else:
+            self.std_scaler = get_scaler(train_df, self._options, self._logger)
+
+        self.train_features = get_features(self.train_df, self._options, self._logger)
+
+        # Scale features
+        self.train_df[self.train_features] = self.std_scaler.transform(
+            self.train_df[self.train_features]
+        )
 
         self._logger.info("Perform hyperparameter optimization")
         model_params = get_hyperparameters(
             train_df=self.train_df,
-            cols_features=cols_features,
+            cols_features=self.train_features,
             options=self._options,
             logger=self._logger,
             loglevel=self._loglevel,
@@ -153,7 +163,7 @@ class XiRescore:
         self._logger.info("Train models")
         self.models, self.splits = training.train(
             train_df=self.train_df,
-            cols_features=cols_features,
+            cols_features=self.train_features,
             clf_params=model_params,
             logger=self._logger,
             options=self._options,
@@ -171,37 +181,6 @@ class XiRescore:
             'models': self.models,
         }
 
-    def _scale_and_cleanup(self, df):
-        """
-        Normalize the features and drop NaN-values if necessary.
-        """
-        features = self._get_features()
-        df_features = df[features]
-
-        if self.std_scaler is None:
-            self.std_scaler = StandardScaler()
-        self.std_scaler.fit(df_features)
-        df[features] = self.std_scaler.transform(df_features)
-
-        return df
-
-    def _unscale(self, df):
-        """
-        Inverse normalize the features.
-        """
-        features = self._get_features()
-        df_features = df[features]
-
-        df_features_unscaled = pd.DataFrame(
-            self.std_scaler.inverse_transform(df_features)
-        )
-
-        for n in df_features_unscaled.columns:
-            f = features[n]
-            df.loc[:, f] = df_features_unscaled.loc[:, n].to_numpy()
-
-        return df
-
     def _true_random(self, min_val=0, max_val=2**32-1):
         state = random.getstate()
         random.seed(self._true_random_seed+self._true_random_ctr)
@@ -209,37 +188,6 @@ class XiRescore:
         val = random.randint(min_val, max_val)
         random.setstate(state)
         return val
-
-    def _get_features(self):
-        features_const = self._options['input']['columns']['features']
-        feat_prefix = self._options['input']['columns']['feature_prefix']
-        features_prefixes = [
-            c for c in self.train_df.columns if str(c).startswith(feat_prefix)
-        ]
-        features = features_const + features_prefixes
-
-        absent_features = [
-            f
-            for f in features
-            if f not in self.train_df.columns
-        ]
-        nan_features = [
-            f
-            for f in features
-            if (f not in absent_features) and any(np.isnan(self.train_df[f].values))
-        ]
-        features = [
-            f
-            for f in features
-            if f not in (absent_features + nan_features)
-        ]
-
-        if len(nan_features) > 0:
-            self._logger.warning(f"Dropped features with NaN values: {nan_features}")
-        if len(absent_features) > 0:
-            self._logger.warning(f"Did not find some features: {absent_features}")
-
-        return features
 
     def rescore(self) -> None:
         """
@@ -329,16 +277,15 @@ class XiRescore:
         else:
             col_csm = self._options['input']['columns']['csm_id']
 
-        # Normalize features
-        df = self._scale_and_cleanup(df)
-
-        # Get feature columns
-        feat_cols = self._get_features()
+        # Scale features
+        df[self.train_features] = self.std_scaler.transform(
+            df[self.train_features]
+        )
 
         # Rescore DF
         df_scores = rescoring.rescore(
             self.models,
-            df=df[feat_cols],
+            df=df[self.train_features],
             rescore_col=col_rescore,
             apply_logit=apply_logit,
             max_cpu=max_jobs
@@ -402,7 +349,9 @@ class XiRescore:
         df_scores.set_index('__index_backup__', inplace=True, drop=True)
 
         self._logger.info('Reverse standard scaling')
-        df_scores = self._unscale(df_scores)
+        df_scores[self.train_features] = self.std_scaler.inverse_transform(
+            df_scores[self.train_features]
+        )
 
         return df_scores
 
