@@ -11,6 +11,7 @@ from functools import partial
 from xirescore import async_result_resolving
 import sklearn
 from sklearn.metrics import accuracy_score, balanced_accuracy_score
+import copy
 
 
 def get_hyperparameters(train_df, cols_features, options,
@@ -74,12 +75,13 @@ def get_hyperparameters(train_df, cols_features, options,
     logger.info(f'Using {max_jobs} CPU cores')
 
     # Create partial function for parameter testing
+    logger.debug(f"Metric name: {options['rescoring']['metric_name']}")
     param_try_job = partial(
         _try_parameters,
         features_df=features_df,
         labels_df=labels_df,
         splits=splits,
-        options=options,
+        options=copy.deepcopy(options),
         logger=logger
     )
 
@@ -87,7 +89,7 @@ def get_hyperparameters(train_df, cols_features, options,
         # Only run multiprocessing for single core models
         if is_mp_model:
             param_scores = [
-                lambda: param_try_job(params)
+                param_try_job(params=params)
                 for params in hyperparam_grid
             ]
         else:
@@ -113,7 +115,7 @@ def get_hyperparameters(train_df, cols_features, options,
 
 def _try_parameters(features_df, labels_df, splits, params, options, logger: logging.Logger):
     # Create child logger for parameter configuration
-    logger = logger.getChild(f"{hex(abs(hash(params)))}")
+    #logger = logger.getChild(f"{hex(abs(hash(str(params))))}")
     logger.info(f"Params: {params}")
 
     # Import classifier model
@@ -124,6 +126,7 @@ def _try_parameters(features_df, labels_df, splits, params, options, logger: log
 
     # Import metric function
     metric_name = options['rescoring']['metric_name']
+    logger.debug(f"Metric name: {options['rescoring']['metric_name']}")
     metric: Callable = getattr(sklearn.metrics, metric_name)
 
     # Initialize result lists
@@ -137,12 +140,12 @@ def _try_parameters(features_df, labels_df, splits, params, options, logger: log
         train_idx, test_idx = fold
 
         # Get fold's train features and labels
-        fold_train_features_df = features_df[train_idx]
-        fold_train_labels_df = labels_df[train_idx]
+        fold_train_features_df = features_df.loc[train_idx]
+        fold_train_labels_df = labels_df.loc[train_idx]
 
         # Get fold's test features and labels
-        fold_test_features_df = features_df[test_idx]
-        fold_test_labels_df = labels_df[test_idx]
+        fold_test_features_df = features_df.loc[test_idx]
+        fold_test_labels_df = labels_df.loc[test_idx]
 
         # Train fold classifier
         clf = model(**params)
@@ -150,7 +153,7 @@ def _try_parameters(features_df, labels_df, splits, params, options, logger: log
         test_predictions = clf.predict(fold_test_features_df)
 
         # Evaluate fold model
-        score = metric(fold_test_labels_df, test_predictions)
+        score = metric(fold_test_labels_df, test_predictions, labels=[0, 1])
         accuracy = accuracy_score(fold_test_labels_df, test_predictions,)
         balanced_accuracy = balanced_accuracy_score(fold_test_labels_df, test_predictions,)
 
