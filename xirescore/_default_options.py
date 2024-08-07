@@ -92,7 +92,7 @@ default_options = {
         'model_name': 'LogisticRegression',
 
         # Name of the desired metric to evaluate models from sklearn.metrics.
-        'metric_name': 'f1_score',
+        'metric_name': 'log_loss',
 
         # Boolean indicating if the metric is better when smaller.
         'minimize_metric': True,
