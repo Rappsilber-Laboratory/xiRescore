@@ -292,7 +292,7 @@ class NoOverlapKFold:
         good_communities = []
         commties = [c for c in nx.community.asyn_fluidc(comp_g, n_communities, seed=seed)]
         commty_counts = [len(c) for c in commties]
-        self.logger.debug(f"Community sizes: {commty_counts} = {sum(commty_counts)}")
+        self.logger.debug(f"Community sizes: {commty_counts} ={sum(commty_counts)}")
         for comm in commties:
             if len(comm) <= max_size:
                 good_communities += [comm]
