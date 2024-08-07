@@ -107,3 +107,6 @@ ENV/
 
 # Mac stuff
 .DS_Store
+
+# version file
+/xirescore/_version.py
