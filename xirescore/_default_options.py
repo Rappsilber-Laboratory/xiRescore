@@ -102,7 +102,8 @@ default_options = {
             "C": np.logspace(-3, 2, 6),
             "solver": ["liblinear"],
             "penalty": ["l1", "l2"],
-            "class_weight": ["balanced", None, {0: 2, 1: 1}]
+            "class_weight": ["balanced", None, {0: 2, 1: 1}],
+            "tol": [1e-8],
         },
 
         # Number of k-fold splits.

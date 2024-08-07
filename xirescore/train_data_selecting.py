@@ -33,7 +33,6 @@ def select(input_data, options, logger):
     selection_mode = options['rescoring']['train_selection_mode']
     train_size_max = options['rescoring']['train_size_max']
     top_sample_size = options['rescoring']['top_sample_size']
-    seed = options['rescoring']['random_seed']
     col_self_between = options['input']['columns']['self_between']
     col_fdr = options['input']['columns']['fdr']
     col_native_score = options['input']['columns']['score']
@@ -65,7 +64,7 @@ def select(input_data, options, logger):
         # Get self targets
         train_self_targets = df[filter_fdr & filter_target & filter_self]
         if len(train_self_targets) > target_max:
-            train_self_targets = train_self_targets.sample(target_max, random_state=seed)
+            train_self_targets = train_self_targets.sample(target_max)
         logger.info(f'Taking {len(train_self_targets):,.0f} self targets below {fdr_cutoff} FDR')
 
         # Get between targets
@@ -74,7 +73,7 @@ def select(input_data, options, logger):
             len(train_between_targets),
             int(train_size_max/2)-len(train_self_targets),
         )
-        train_between_targets = train_between_targets.sample(sample_min, random_state=seed)
+        train_between_targets = train_between_targets.sample(sample_min)
         logger.info(f'Taking {len(train_between_targets):,.0f} between targets below {fdr_cutoff} FDR')
 
         # Get self decoy-x
@@ -83,7 +82,7 @@ def select(input_data, options, logger):
             len(train_self_decoys),
             int(train_size_max/4)
         )
-        train_self_decoys = train_self_decoys.sample(sample_min, random_state=seed)
+        train_self_decoys = train_self_decoys.sample(sample_min)
         logger.info(f'Taking {len(train_self_decoys):,.0f} self decoys.')
 
         # Get between decoy-x
@@ -92,7 +91,7 @@ def select(input_data, options, logger):
             len(train_between_decoys),
             int(train_size_max/2)-len(train_self_decoys),
         )
-        train_between_decoys = train_between_decoys.sample(sample_min, random_state=seed)
+        train_between_decoys = train_between_decoys.sample(sample_min)
         logger.info(f'Taking {len(train_between_decoys):,.0f} between decoys.')
 
         train_data_df = pd.concat([
@@ -115,7 +114,7 @@ def select(input_data, options, logger):
         # Get self targets
         train_self_targets = df[filter_fdr & filter_target & filter_self]
         if len(train_self_targets) > target_max:
-            train_self_targets = train_self_targets.sample(target_max, random_state=seed)
+            train_self_targets = train_self_targets.sample(target_max)
         logger.info(f'Taking {len(train_self_targets):,.0f} self targets below {fdr_cutoff} FDR')
 
         # Get between targets
@@ -124,7 +123,7 @@ def select(input_data, options, logger):
             len(train_between_targets),
             int(train_size_max/2)-len(train_self_targets),
         )
-        train_between_targets = train_between_targets.sample(sample_min, random_state=seed)
+        train_between_targets = train_between_targets.sample(sample_min)
         logger.info(f'Taking {len(train_between_targets):,.0f} between targets below {fdr_cutoff} FDR')
 
         # Get capped decoy-x
@@ -155,12 +154,13 @@ def select(input_data, options, logger):
             score_min = hist_bins[i]
             score_max = hist_bins[i + 1]
             bins_samples = all_decoy[
-                (all_decoy[col_native_score] >= score_min) & (all_decoy[col_native_score] < score_max)
+                (all_decoy[col_native_score] >= score_min) &
+                (all_decoy[col_native_score] < score_max)
             ]
             train_decoys = pd.concat(
                 [
                     train_decoys,
-                    bins_samples.sample(n=n, random_state=seed)
+                    bins_samples.sample(n=n)
                 ]
             )
 
@@ -176,35 +176,34 @@ def select(input_data, options, logger):
         n_bins = 1_000
         tt_size = int(train_size_max/2)
         dx_size = int(train_size_max/2)
-        score_col = options['input']['columns']['score']
         _, hist_bins = np.histogram(
-            df[score_col],
+            df[col_native_score],
             bins=n_bins
         )
         hist_tt, _ = np.histogram(
             df.loc[
                 df[col_target],
-                score_col
+                col_native_score
             ],
             bins=hist_bins
         )
         hist_dx, _ = np.histogram(
             df.loc[
                 ~df[col_target],
-                score_col
+                col_native_score
             ],
             bins=hist_bins
         )
         dx_tt_capped = np.minimum(hist_dx, hist_tt)
 
         # Self targets
-        all_psms_self_target = df[
+        self_tt_df = df[
             df[col_target] &
             (df[col_self_between] == val_self) &
             (df.fdr <= fdr_cutoff)
         ]
-        n_self_target = min(len(all_psms_self_target), tt_size)
-        train_tt_df = all_psms_self_target.sample(n_self_target)
+        n_self_target = min(len(self_tt_df), tt_size)
+        train_tt_df = self_tt_df.sample(n_self_target)
         logger.debug(f"Using {n_self_target} self-link targets FDR<={fdr_cutoff} for training")
         # Fill with between targets
         all_psms_between_target = df[
@@ -224,7 +223,7 @@ def select(input_data, options, logger):
         if dx_size is None:
             dx_size = n_self_target + n_between_target
 
-        df_decoyx = df[
+        dx_df = df[
             ~df[col_target]
         ]
         n_decoy = min([
@@ -240,9 +239,9 @@ def select(input_data, options, logger):
                 continue
             score_min = hist_bins[i]
             score_max = hist_bins[i+1]
-            bins_samples = df_decoyx[
-                (df_decoyx[score_col] >= score_min) &
-                (df_decoyx[score_col] < score_max)
+            bins_samples = dx_df[
+                (dx_df[col_native_score] >= score_min) &
+                (dx_df[col_native_score] < score_max)
             ]
             train_dx_df = pd.concat([
                 train_dx_df,
