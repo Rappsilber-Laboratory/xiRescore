@@ -107,6 +107,10 @@ class XiRescore:
         """
         Trained models from the f-fold cross-validation.
         """
+        self.std_scaler: StandardScaler = None
+        """
+        StandardScaler for feature normalization.
+        """
 
     def run(self) -> None:
         """
@@ -124,13 +128,17 @@ class XiRescore:
         :type train_df: DataFrame, optional
         """
         self._logger.info('Start training')
+
+        # Reset StandardScaler
+        self.std_scaler: StandardScaler = None
+
         if train_df is None:
             self.train_df = train_data_selecting.select(
                 self._input,
                 self._options,
                 self._logger
             )
-        self.train_df = self._normalize_and_cleanup(self.train_df)
+        self.train_df = self._scale_and_cleanup(self.train_df)
         cols_features = self._get_features()
 
         self._logger.info("Perform hyperparameter optimization")
@@ -163,20 +171,38 @@ class XiRescore:
             'models': self.models,
         }
 
-    def _normalize_and_cleanup(self, df):
+    def _scale_and_cleanup(self, df):
         """
         Normalize the features and drop NaN-values if necessary.
         """
         features = self._get_features()
         df_features = df[features]
 
-        std_scaler = StandardScaler()
-        std_scaler.fit(df_features)
-        df_features_scaled = pd.DataFrame(std_scaler.transform(df_features))
+        if self.std_scaler is None:
+            self.std_scaler = StandardScaler()
+        self.std_scaler.fit(df_features)
+        df_features_scaled = pd.DataFrame(self.std_scaler.transform(df_features))
 
         for n in df_features_scaled.columns:
             f = features[n]
             df.loc[:, f] = df_features_scaled.loc[:, n].to_numpy()
+
+        return df
+
+    def _unscale(self, df):
+        """
+        Inverse normalize the features.
+        """
+        features = self._get_features()
+        df_features = df[features]
+
+        df_features_unscaled = pd.DataFrame(
+            self.std_scaler.inverse_transform(df_features)
+        )
+
+        for n in df_features_unscaled.columns:
+            f = features[n]
+            df.loc[:, f] = df_features_unscaled.loc[:, n].to_numpy()
 
         return df
 
@@ -308,7 +334,7 @@ class XiRescore:
             col_csm = self._options['input']['columns']['csm_id']
 
         # Normalize features
-        df = self._normalize_and_cleanup(df)
+        df = self._scale_and_cleanup(df)
 
         # Get feature columns
         feat_cols = self._get_features()
@@ -378,6 +404,9 @@ class XiRescore:
         )
         df_scores[f'{col_rescore}_{col_top_ranking}'] = df_scores[f'{col_rescore}'] == df_scores[f'{col_rescore}_max']
         df_scores.set_index('__index_backup__', inplace=True, drop=True)
+
+        self._logger.info('Reverse standard scaling')
+        df_scores = self._unscale(df_scores)
 
         return df_scores
 

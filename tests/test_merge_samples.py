@@ -35,11 +35,11 @@ def test_merge_samples():
     ]
     df['fdr_group'] = 'between'
     df.loc[df['self'], 'fdr_group'] = 'self'
-    df['csm_id'] = df.index
+    df['csm_id'] = df.index/len(df)
     df['spectrum_id'] = df.index
     df['top_ranking'] = True
     df['isTT'] = (~df['is_decoy_p1']) & (~df['is_decoy_p2'])
-    df['feature_idx'] = df.index
+    df['feature_idx'] = df['csm_id']
     df['feature_isTT'] = df['isTT']
 
     n_tt = len(df[df['isTT']])
@@ -75,12 +75,12 @@ def test_merge_samples():
         df_out = pd.read_csv(f'{tmpdirname}/output.csv.gz')
         assert len(df) == len(df_out)
         assert np.count_nonzero(
-            df_out['isTT'] != df_out['feature_isTT']
-        ) == 0
+            np.isclose(df_out['isTT'], df_out['feature_isTT'])
+        ) == len(df_out)
         assert np.count_nonzero(
-            df_out['csm_id'] != df_out['feature_idx']
-        ) == 0
+            np.isclose(df_out['csm_id'], df_out['feature_idx'])
+        ) == len(df_out)
         classifications = df_out['rescore'] > 0
         assert np.count_nonzero(
-            df_out['isTT'] != classifications
-        ) == 0
+            df_out['isTT'] == classifications
+        ) == len(df_out)
