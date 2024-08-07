@@ -174,9 +174,8 @@ def select(input_data, options, logger):
     elif selection_mode == "self-target-scaled-decoy":
         # Prepare histograms
         n_bins = 1_000
-        all_psms_df = df
-        target_size = int(train_size_max/2)
-        decoyx_size = int(train_size_max/2)
+        tt_size = int(train_size_max/2)
+        dx_size = int(train_size_max/2)
         score_col = options['input']['columns']['score']
         _, hist_bins = np.histogram(
             df[score_col],
@@ -184,14 +183,14 @@ def select(input_data, options, logger):
         )
         hist_tt, _ = np.histogram(
             df.loc[
-                df['isTT'],
+                df[col_target],
                 score_col
             ],
             bins=hist_bins
         )
         hist_dx, _ = np.histogram(
             df.loc[
-                ~df['isTT'],
+                ~df[col_target],
                 score_col
             ],
             bins=hist_bins
@@ -200,20 +199,20 @@ def select(input_data, options, logger):
 
         # Self targets
         all_psms_self_target = df[
-            df['isTT'] &
-            (df["fdr_group"] == "self") &
+            df[col_target] &
+            (df[col_self_between] == val_self) &
             (df.fdr <= fdr_cutoff)
         ]
-        n_self_target = min(len(all_psms_self_target), target_size)
+        n_self_target = min(len(all_psms_self_target), tt_size)
         train_tt_df = all_psms_self_target.sample(n_self_target)
         logger.debug(f"Using {n_self_target} self-link targets FDR<={fdr_cutoff} for training")
         # Fill with between targets
         all_psms_between_target = df[
-            df['isTT'] &
-            (df["fdr_group"] == "between") &
+            df[col_target] &
+            (df[col_self_between] != val_self) &
             (df.fdr <= fdr_cutoff)
         ]
-        n_between_target = min(target_size-n_self_target, len(all_psms_between_target))
+        n_between_target = min(tt_size-n_self_target, len(all_psms_between_target))
         train_tt_df = pd.concat([
             train_tt_df,
             all_psms_between_target.sample(n_between_target)
@@ -222,15 +221,15 @@ def select(input_data, options, logger):
 
         # High scoring decoys
         n_capped_dx = dx_tt_capped.sum()
-        if decoyx_size is None:
-            decoyx_size = n_self_target + n_between_target
+        if dx_size is None:
+            dx_size = n_self_target + n_between_target
 
         df_decoyx = df[
-            ~df['isTT']
+            ~df[col_target]
         ]
         n_decoy = min([
             n_capped_dx,
-            decoyx_size
+            dx_size
         ])
         dx_reduce_factor = n_decoy / n_capped_dx
         hist_dx_reduced = (dx_tt_capped * dx_reduce_factor).round().astype('int')
