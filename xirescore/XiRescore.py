@@ -174,7 +174,9 @@ class XiRescore:
         std_scaler.fit(df_features)
         df_features_scaled = pd.DataFrame(std_scaler.transform(df_features))
 
-        df.loc[:, df_features_scaled.columns] = df_features_scaled
+        for n in df_features_scaled.columns:
+            f = features[n]
+            df.loc[:, f] = df_features_scaled.loc[:, n]
 
         return df
 
