@@ -1,6 +1,8 @@
+import pytest
+
 import xirescore.readers as readers
 
-
+@pytest.mark.db
 def test_db_input():
     # docker run --rm --name xirescore-pytest-postgres -e POSTGRES_PASSWORD=test -e POSTGRES_USER=test -e POSTGRES_DB=xisearch2 -p 5432:5432 -v ./tests/fixtures/db:/docker-entrypoint-initdb.d/ postgres
     # Read top_ranking sample
