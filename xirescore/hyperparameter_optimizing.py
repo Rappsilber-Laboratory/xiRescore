@@ -81,7 +81,7 @@ def get_hyperparameters(train_df, cols_features, options,
         features_df=features_df,
         labels_df=labels_df,
         splits=splits,
-        options=copy.deepcopy(options),
+        options=options,
         logger=logger
     )
 
@@ -93,10 +93,13 @@ def get_hyperparameters(train_df, cols_features, options,
                 for params in hyperparam_grid
             ]
         else:
-            param_scores = pool.map_async(
-                param_try_job,
-                hyperparam_grid
-            )
+            param_scores = [
+                pool.apply_async(
+                    param_try_job,
+                    kwds=dict(params=params)
+                )
+                for params in hyperparam_grid
+            ]
 
         # Resolve (potentially) async results
         param_scores = async_result_resolving.resolve(param_scores, logger=logger)
