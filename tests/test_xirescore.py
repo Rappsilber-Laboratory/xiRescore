@@ -210,6 +210,7 @@ def test_full_df_rescoring():
             'scaler_params': {
                 'output_distribution': 'normal'
             },
+            'random_seed': 123456
         }
     }
 
@@ -221,6 +222,18 @@ def test_full_df_rescoring():
     rescorer.run()
     df_out = rescorer.get_rescored_output()
     assert len(df) == len(df_out)
+
+    # See if runs are reproducible
+    rescorer = XiRescore(
+        input_path=df,
+        options=options,
+        logger=logger,
+    )
+    rescorer.run()
+    df_out2 = rescorer.get_rescored_output()
+    hash1 = pd.util.hash_pandas_object(df_out)
+    hash2 = pd.util.hash_pandas_object(df_out2)
+    assert all(np.equal(hash1, hash2))
 
 
 @pytest.mark.cli
