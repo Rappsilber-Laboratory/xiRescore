@@ -366,7 +366,7 @@ class XiRescore:
         :rtype: DataFrame
         """
         if type(self._output) is pd.DataFrame:
-            return self._output.copy()
+            return self._output.reset_index(drop=True).copy()
         else:
             raise XiRescoreError('Not available for file or DB output.')
 
