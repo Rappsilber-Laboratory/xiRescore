@@ -76,6 +76,9 @@ default_options = {
         # Method on how to sample the training data.
         'train_selection_mode': 'self-targets-all-decoys',
 
+        # Number of samples used for training data selection.
+        'top_sample_size': 1_000_000,
+
         # Maximum number of training samples
         'train_size_max': 20_000,
 

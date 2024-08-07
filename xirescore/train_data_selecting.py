@@ -32,6 +32,7 @@ def select(input_data, options, logger):
     # Extract options
     selection_mode = options['rescoring']['train_selection_mode']
     train_size_max = options['rescoring']['train_size_max']
+    top_sample_size = options['rescoring']['top_sample_size']
     seed = options['rescoring']['random_seed']
     col_self_between = options['input']['columns']['self_between']
     col_fdr = options['input']['columns']['fdr']
@@ -41,7 +42,7 @@ def select(input_data, options, logger):
     val_self = options['input']['constants']['self']
 
     # Read input data
-    df = readers.read_top_sample(input_data, logger=logger)
+    df = readers.read_top_sample(input_data, logger=logger, sample=top_sample_size)
 
     # Generate needed columns
     df = generate_columns(df, options=options, do_fdr=True, do_self_between=True)
