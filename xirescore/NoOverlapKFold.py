@@ -241,7 +241,7 @@ class NoOverlapKFold:
             testcum = set()
             labels_ok = True
             for i_split, (train_s, test_s) in enumerate(splits_clean):
-                self.logger.debug(f"Train/Test: {len(train_s)}/{len(test_s)}")
+                self.logger.debug(f"Train/Test: {len(train_s):,.0f}/{len(test_s):,.0f}")
                 if len(np.intersect1d(train_s, test_s)) > 0:
                     self.logger.fatal("FATAL! Train and test overlapping")
                     return None
@@ -269,7 +269,7 @@ class NoOverlapKFold:
                 continue
 
             if len(df) != len(testcum):
-                self.logger.error(f"FATAL! Not all training data tested {len(testcum)} of {len(df)}.")
+                self.logger.error(f"FATAL! Not all training data tested {len(testcum):,.0f} of {len(df):,.0f}.")
                 return None
 
             return splits_clean
@@ -304,7 +304,7 @@ class NoOverlapKFold:
     def recursive_async_fluidc(self, g: nx.Graph, seed, max_size=1000000, n_communities=2) -> list[set]:
         good_communities = []
         comps = [c for c in nx.connected_components(g)]
-        self.logger.debug(f"Number of components: {len(comps)}")
+        self.logger.debug(f"Number of components: {len(comps):,.0f}")
         for comp in comps:
             if len(comp) <= max_size:
                 good_communities += [comp]
