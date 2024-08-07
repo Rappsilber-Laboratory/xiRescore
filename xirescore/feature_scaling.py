@@ -14,7 +14,8 @@ def get_scaler(df: pd.DataFrame, options: dict, logger: Logger):
     df_features = df[features]
 
     Scaler: ClassifierMixin.__class__ = getattr(preprocessing, options['rescoring']['scaler'])
-    scaler = Scaler()
+    scaler_options = options['rescoring']['scaler_params']
+    scaler = Scaler(**scaler_options)
     scaler.fit(df_features)
 
     return scaler

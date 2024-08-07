@@ -121,6 +121,9 @@ default_options = {
 
         # Scaler to use for the features
         'scaler': 'StandardScaler',
+
+        # Scaler's keyword arguments
+        'scaler_params': {}
     },
     'output': {
         'columns': {
