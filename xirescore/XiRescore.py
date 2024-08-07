@@ -176,7 +176,7 @@ class XiRescore:
 
         for n in df_features_scaled.columns:
             f = features[n]
-            df.loc[:, f] = df_features_scaled.loc[:, n]
+            df.loc[:, f] = df_features_scaled.loc[:, n].to_numpy()
 
         return df
 
