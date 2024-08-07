@@ -119,7 +119,7 @@ def get_hyperparameters(train_df, cols_features, options,
 def _try_parameters(features_df, labels_df, splits, params, options, logger: logging.Logger):
     # Create child logger for parameter configuration
     #logger = logger.getChild(f"{hex(abs(hash(str(params))))}")
-    logger.info(f"Params: {params}")
+    logger.debug(f"Params: {params}")
 
     # Import classifier model
     model_class = options['rescoring']['model_class']
