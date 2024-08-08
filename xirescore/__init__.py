@@ -1,5 +1,7 @@
 from importlib.metadata import version
 
+from pkg_resources import DistributionNotFound
+
 """Top-level package for xiRescore."""
 
 __author__ = """Falk Boudewijn Schimweg"""

@@ -51,8 +51,8 @@ test_requirements = ['pytest>=3', ]
 
 setup(
     author="Falk Boudewijn Schimweg",
-    author_email='f.schimweg@win.tu-berlin.de',
-    python_requires='>=3.6',
+    author_email='git@falk.schimweg.de',
+    python_requires='>=3.10',
     use_scm_version=True,
     setup_requires=['setuptools_scm'],
     classifiers=[
@@ -61,9 +61,6 @@ setup(
         'License :: OSI Approved :: GNU General Public License v3 (GPLv3)',
         'Natural Language :: English',
         'Programming Language :: Python :: 3',
-        'Programming Language :: Python :: 3.6',
-        'Programming Language :: Python :: 3.7',
-        'Programming Language :: Python :: 3.8',
         'Programming Language :: Python :: 3.10',
     ],
     description="A machine learning based approach to rescore crosslinked spectrum matches (CSMs).",
@@ -81,6 +78,6 @@ setup(
     packages=find_packages(include=['xirescore', 'xirescore.*'], exclude=["tests"]),
     test_suite='tests',
     tests_require=test_requirements,
-    url='https://github.com/z3rone/xirescore',
+    url='https://github.com/Rappsilber-Laboratory/xiRescore',
     zip_safe=False,
 )
