@@ -13,3 +13,4 @@ XiRescore is a cross-link mass spectrometry rescoring tool developed by Rappsilb
    large-data
    options
    api
+   license
