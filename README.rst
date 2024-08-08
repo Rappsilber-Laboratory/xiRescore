@@ -16,7 +16,7 @@ xiRescore
 A machine learning based approach to rescore crosslinked spectrum matches (CSMs).
 
 
-* Free software: GNU General Public License v3
+* Free software: GNU Affero General Public License v3 or later (AGPLv3+)
 * Documentation: https://xirescore.readthedocs.io.
 
 
