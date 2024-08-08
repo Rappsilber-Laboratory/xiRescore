@@ -109,7 +109,7 @@ def read_spectra_range(input: str | pd.DataFrame,
             (input[spectra_cols].apply(lambda r: tuple(r)) >= tuple(spectra_from)) &
             (input[spectra_cols].apply(lambda r: tuple(r)) <= tuple(spectra_to))
         ).iloc[:, 0]
-        return input[filters]
+        return input[filters].copy()
     # Handle input path
     file_type = get_source_type(input)
     if file_type == 'csv':
