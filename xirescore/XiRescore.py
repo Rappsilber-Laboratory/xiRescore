@@ -284,7 +284,7 @@ class XiRescore:
 
         # Rescore DF
         df_scores = rescoring.rescore(
-            self.models,
+            models=self.models,
             df=df[self.train_features],
             rescore_col=col_rescore,
             apply_logit=apply_logit,
