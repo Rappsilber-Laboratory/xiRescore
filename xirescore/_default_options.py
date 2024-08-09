@@ -128,12 +128,9 @@ default_options = {
     'output': {
         'columns': {
             # Name of the column containing the new score.
-            # Also base name for each model's separate prediction.
+            # Also base name for each model's separate prediction
+            # and training slice information.
             'rescore': 'rescore',
-
-            # Name of the column indicating if a sample was used for training
-            # and in which fold it was rescored.
-            'fold': 'fold',
         }
     },
 }
