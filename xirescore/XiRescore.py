@@ -82,6 +82,8 @@ class XiRescore:
 
         # Store input data path
         self._input = input_path
+        if type(self._input) is pd.DataFrame:
+            self._input = self._input.copy()
         if output_path is None:
             # Store output in new DataFrame if no path is given
             self._output = pd.DataFrame()
