@@ -762,7 +762,9 @@ class DBConnector:
                 tables['resultsettype']
             ).values({
                 'name': name,
-                'id': select(func.max(tables['resultsettype'].c.id)+1),
+                'id': select(
+                    func.max(tables['resultsettype'].c.id)+1
+                ).scalar_subquery(),
             })
             conn.execute(rstype_query)
             conn.commit()
