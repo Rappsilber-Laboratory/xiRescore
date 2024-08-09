@@ -106,9 +106,9 @@ def read_spectra_range(input: str | pd.DataFrame,
     # Handle input DF
     if type(input) is pd.DataFrame:
         filters = (
-            (input[spectra_cols].apply(lambda r: tuple(r)) >= tuple(spectra_from)) &
-            (input[spectra_cols].apply(lambda r: tuple(r)) <= tuple(spectra_to))
-        ).iloc[:, 0]
+            (input[spectra_cols].apply(lambda r: tuple(r), axis=1) >= tuple(spectra_from)) &
+            (input[spectra_cols].apply(lambda r: tuple(r), axis=1) <= tuple(spectra_to))
+        )
         return input[filters].copy()
     # Handle input path
     file_type = get_source_type(input)
@@ -204,9 +204,9 @@ def read_spectra_range_parquet(path,
         df: pd.DataFrame
         # Generate filters
         filters = (
-            (df[spectra_cols].apply(lambda r: tuple(r)) >= tuple(spectra_from)) &
-            (df[spectra_cols].apply(lambda r: tuple(r)) <= tuple(spectra_to))
-        ).iloc[:, 0]
+            (df[spectra_cols].apply(lambda r: tuple(r), axis=1) >= tuple(spectra_from)) &
+            (df[spectra_cols].apply(lambda r: tuple(r), axis=1) <= tuple(spectra_to))
+        )
         # Append row group
         res_df = pd.concat(
             [
@@ -249,8 +249,8 @@ def read_spectra_range_csv(path,
     for df in pd.read_csv(path, sep=sep, chunksize=chunksize):
         # Generate filters for the requested spectra range
         filters = (
-            (df[spectra_cols].apply(lambda r: tuple(r)) >= tuple(spectra_from)) &
-            (df[spectra_cols].apply(lambda r: tuple(r)) <= tuple(spectra_to))
+            (df[spectra_cols].apply(lambda r: tuple(r), axis=1) >= tuple(spectra_from)) &
+            (df[spectra_cols].apply(lambda r: tuple(r), axis=1) <= tuple(spectra_to))
         ).iloc[:, 0]
         # Append filtered chunk
         res_df = pd.concat(
