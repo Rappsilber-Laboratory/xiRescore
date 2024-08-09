@@ -47,6 +47,22 @@ requirements = [
     "scipy>=1.12.0",
 ]
 
+requirements_dev = [
+    'pip==19.2.3',
+    'bump2version==0.5.11',
+    'wheel==0.33.6',
+    'watchdog==0.9.0',
+    'flake8==3.7.8',
+    'tox==3.14.0',
+    'coverage==4.5.4',
+    'Sphinx==1.8.5',
+    'twine==1.14.0',
+    'setuptools_scm',
+    'pytest==6.2.4',
+    'black==21.7b0',
+    'sphinx_rtd_theme',
+]
+
 test_requirements = ['pytest>=3', ]
 
 setup(
@@ -70,6 +86,9 @@ setup(
         ],
     },
     install_requires=requirements,
+    extras_require={
+        'dev': requirements_dev
+    },
     license="GNU General Public License v3",
     long_description=readme + '\n\n' + history,
     include_package_data=True,
