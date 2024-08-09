@@ -251,7 +251,7 @@ def read_spectra_range_csv(path,
         filters = (
             (df[spectra_cols].apply(lambda r: tuple(r), axis=1) >= tuple(spectra_from)) &
             (df[spectra_cols].apply(lambda r: tuple(r), axis=1) <= tuple(spectra_to))
-        ).iloc[:, 0]
+        )
         # Append filtered chunk
         res_df = pd.concat(
             [
