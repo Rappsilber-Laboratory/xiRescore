@@ -1,5 +1,8 @@
 [build-system]
-requires = ["setuptools>=61.0"]
+requires = [
+    "setuptools>=61.0",
+    "setuptools_scm"
+]
 build-backend = "setuptools.build_meta"
 
 [project]
@@ -20,7 +23,7 @@ dynamic = [
     "dependencies",
     "classifiers"
 ]
-license = {file = "LICENSE"}
+license = { text = "GNU Affero General Public License v3 or later (AGPLv3+)" }
 readme = "README.rst"
 
 [project.scripts]

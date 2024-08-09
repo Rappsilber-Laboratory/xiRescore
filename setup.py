@@ -16,7 +16,6 @@ requirements = [
     "numpy>=1.26.4",
     "PyYAML~=6.0",
     "tabulate~=0.9.0",
-    "setuptools~=71.1.0",
     "numpy-indexed~=0.3.7",
     "scikit-learn~=1.5.1",
     "joblib~=1.2.0",
@@ -24,17 +23,9 @@ requirements = [
     "tqdm~=4.66.0",
     "hyperopt~=0.2.7",
     "lightgbm~=3.3.5",  # Check the pre-requirements https://pypi.org/project/lightgbm/
-    "pyteomics~=4.6",
-    "seaborn~=0.12.2",
     "imblearn~=0.0",
-    "XlsxWriter~=3.1.0",
     "pytest~=8.3.1",
-    "pydocstyle~=6.3.0",
-    "pytest-cov~=4.0.0",
-    "pytest-flake8~=1.0.6",
-    "pytest-pydocstyle~=2.3.2",
     "py~=1.11.0",
-    "flake8==4.0.1",
     "networkx~=3.1",
     "multiprocess~=0.70.16",
     "threadpoolctl>=3.5.0",
@@ -61,9 +52,23 @@ requirements_dev = [
     'pytest==6.2.4',
     'black==21.7b0',
     'sphinx_rtd_theme',
+    "setuptools~=71.1.0",
 ]
 
-test_requirements = ['pytest>=3', ]
+requirements_test = [
+    'pytest>=3',
+    "pydocstyle~=6.3.0",
+    "pytest-cov~=4.0.0",
+    "pytest-flake8~=1.0.6",
+    "pytest-pydocstyle~=2.3.2",
+    "flake8==4.0.1",
+]
+
+requirements_docs = [
+    "sphinx",
+    "sphinx_rtd_theme",
+    "sphinx-favicon",
+]
 
 setup(
     author="Falk Boudewijn Schimweg",
@@ -87,16 +92,18 @@ setup(
     },
     install_requires=requirements,
     extras_require={
-        'dev': requirements_dev
+        'test': requirements_test,
+        'docs': requirements_docs,
+        'dev': requirements_dev + requirements_test + requirements_docs,
     },
-    license="GNU General Public License v3",
+    license="GNU Affero General Public License v3 or later (AGPLv3+)",
     long_description=readme + '\n\n' + history,
     include_package_data=True,
     keywords='xirescore',
     name='xirescore',
     packages=find_packages(include=['xirescore', 'xirescore.*'], exclude=["tests"]),
     test_suite='tests',
-    tests_require=test_requirements,
+    tests_require=requirements_test,
     url='https://github.com/Rappsilber-Laboratory/xiRescore',
     zip_safe=False,
 )
