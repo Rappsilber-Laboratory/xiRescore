@@ -146,7 +146,7 @@ def select(input_data, options, logger):
             1,
             n_decoy / hist_dx_capped.sum(),
         )
-        hist_dx_scaled = (hist_dx_capped * dx_scale_fact).astype(int)
+        hist_dx_scaled = (hist_dx_capped * dx_scale_fact).round().astype(int)
 
         train_decoys = pd.DataFrame()
         for i, n in enumerate(hist_dx_scaled):
