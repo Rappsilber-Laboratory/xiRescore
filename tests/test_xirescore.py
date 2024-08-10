@@ -1,6 +1,8 @@
 #!/usr/bin/env python
 
 """Tests for `xirescore` package."""
+import random
+
 import pandas as pd
 import pytest
 import logging
@@ -80,6 +82,67 @@ def test_full_parquet_rescoring():
         df_in = pd.read_parquet('./tests/fixtures/test_data.parquet')
         df_out = pd.read_parquet(f'{tmpdirname}/result.parquet')
         assert len(df_in) == len(df_out)
+
+
+@pytest.mark.parquet
+def test_linear_filter():
+    random.seed(0)
+    np.random.seed(0)
+    with tempfile.TemporaryDirectory(prefix='pytest_xirescore_') as tmpdirname:
+        logging.basicConfig(
+            level=logging.DEBUG,
+            format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+        )
+        logger = logging.getLogger(__name__)
+        logger.setLevel(logging.DEBUG)
+        logger.info('Start full parquet rescoring test')
+        logger.info(f'Write results to {tmpdirname}')
+
+        options = {
+            'input': {
+                'columns': {
+                    'features': [
+                        'match_score',
+                        'better_score',
+                        'worse_score',
+                        'useless_score_uni',
+                        'useless_score_norm',
+                        'conditional_score',
+                    ]
+                }
+            },
+            'rescoring': {
+                'spectra_batch_size': 25_000
+            }
+        }
+
+        df = pd.read_parquet('./tests/fixtures/test_data.parquet')
+
+        df_linear = df.sample(100)
+        df_linear['base_sequence_p2'] = None
+        df = pd.concat([
+            df,
+            df_linear
+        ])
+
+        df_linear = df.sample(100)
+        df_linear['base_sequence_p2'] = ''
+        df = pd.concat([
+            df,
+            df_linear
+        ])
+
+        df.to_parquet(f'{tmpdirname}/input.parquet')
+
+        rescorer = XiRescore(
+            input_path=f'{tmpdirname}/input.parquet',
+            output_path=f'{tmpdirname}/result.parquet',
+            options=options,
+            logger=logger,
+        )
+        rescorer.run()
+        df_out = pd.read_parquet(f'{tmpdirname}/result.parquet')
+        assert len(df) == len(df_out)+200
 
 
 @pytest.mark.parquet

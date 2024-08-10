@@ -232,6 +232,7 @@ class XiRescore:
                 spectra_to=spectra_to,
                 spectra_cols=cols_spectra,
                 sequence_p2_col=self._options['input']['columns']['base_sequence_p2'],
+                only_pairs=True,
                 logger=self._logger,
                 random_seed=self._true_random()
             )
