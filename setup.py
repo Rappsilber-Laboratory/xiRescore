@@ -36,6 +36,7 @@ requirements = [
     "fastparquet~=2024.5.0",
     "pyarrow~=17.0.0",
     "scipy>=1.12.0",
+    "setuptools~=71.1.0",
 ]
 
 requirements_dev = [
@@ -52,7 +53,6 @@ requirements_dev = [
     'pytest==6.2.4',
     'black==21.7b0',
     'sphinx_rtd_theme',
-    "setuptools~=71.1.0",
 ]
 
 requirements_test = [
