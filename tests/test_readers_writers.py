@@ -8,7 +8,7 @@ def test_db_input():
     # Read top_ranking sample
     input_db = 'xi2resultsets://test:test@localhost:5432/xisearch2/' \
                'fdbe9e59-2baa-44cb-b8cb-e8b7a590e136'
-    df = readers.read_top_sample(input_db, sample=100)
+    df = readers.read_sample(input_db, sample=100, only_top_ranking=True)
     assert len(df) == 100
     del df
 

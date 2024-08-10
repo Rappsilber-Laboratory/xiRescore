@@ -3,6 +3,7 @@ Readers for data inputs
 """
 import random
 
+import numpy as np
 import pandas as pd
 from xirescore.DBConnector import DBConnector
 from collections.abc import Sequence
@@ -85,22 +86,12 @@ def read_spectra_ids(path, spectra_cols=None, logger=None, random_seed=None) -> 
             .to_records(index=False)
 
 
-def read_spectra(path: str, spectra: Sequence[Sequence], spectra_cols: Sequence):
-    file_type = get_source_type(path)
-    if file_type == 'csv':
-        return read_spectra_csv(path, spectra, spectra_cols=spectra_cols)
-    if file_type == 'tsv':
-        return read_spectra_csv(path, spectra, sep='\t', spectra_cols=spectra_cols)
-    if file_type == 'db':
-        return read_spectra_db(path, spectra)
-    if file_type == 'parquet':
-        return read_spectra_parquet(path, spectra, spectra_cols=spectra_cols)
-
-
 def read_spectra_range(input: str | pd.DataFrame,
                        spectra_from: Sequence[Sequence],
                        spectra_to: Sequence[Sequence],
                        spectra_cols: Sequence = None,
+                       sequence_p2_col='sequence_p2',
+                       only_pairs=True,
                        logger=None,
                        random_seed=None):
     # Handle input DF
@@ -109,35 +100,49 @@ def read_spectra_range(input: str | pd.DataFrame,
             (input[spectra_cols].apply(lambda r: tuple(r), axis=1) >= tuple(spectra_from)) &
             (input[spectra_cols].apply(lambda r: tuple(r), axis=1) <= tuple(spectra_to))
         )
+        if only_pairs:
+            filters &= ~input[sequence_p2_col].isna()
+            filters &= input[sequence_p2_col] != ''
         return input[filters].copy()
     # Handle input path
     file_type = get_source_type(input)
     if file_type == 'csv':
-        return read_spectra_range_csv(input, spectra_from, spectra_to, spectra_cols=spectra_cols)
-    if file_type == 'tsv':
-        return read_spectra_range_csv(input, spectra_from, spectra_to, sep='\t', spectra_cols=spectra_cols)
-    if file_type == 'db':
-        return read_spectra_range_db(input, spectra_from, spectra_to, logger=logger, random_seed=random_seed)
-    if file_type == 'parquet':
-        return read_spectra_range_parquet(input, spectra_from, spectra_to, spectra_cols=spectra_cols)
-
-
-def spectra_range_prefetcher(input: str | pd.DataFrame,
-                             ranges,
-                             res_queue: mp.Queue,
-                             spectra_cols: Sequence = None,
-                             logger=None):
-    for spectra_from, spectra_to in ranges:
-        while not res_queue.empty():
-            sleep(1)
-        res = read_spectra_range(
-            input=input,
-            spectra_from=spectra_from,
-            spectra_to=spectra_to,
+        return read_spectra_range_csv(
+            input,
+            spectra_from,
+            spectra_to,
             spectra_cols=spectra_cols,
-            logger=logger
+            sequence_p2_col=sequence_p2_col,
+            only_pairs=only_pairs,
         )
-        res_queue.put(res)
+    if file_type == 'tsv':
+        return read_spectra_range_csv(
+            input,
+            spectra_from,
+            spectra_to,
+            sep='\t',
+            spectra_cols=spectra_cols,
+            sequence_p2_col=sequence_p2_col,
+            only_pairs=only_pairs,
+        )
+    if file_type == 'db':
+        return read_spectra_range_db(
+            input,
+            spectra_from,
+            spectra_to,
+            logger=logger,
+            random_seed=random_seed,
+            only_pairs=only_pairs,
+        )
+    if file_type == 'parquet':
+        return read_spectra_range_parquet(
+            input,
+            spectra_from,
+            spectra_to,
+            spectra_cols=spectra_cols,
+            sequence_p2_col=sequence_p2_col,
+            only_pairs=only_pairs,
+        )
 
 
 def read_spectra_db(path, spectra: Sequence[Sequence], random_seed=None):
@@ -159,7 +164,7 @@ def read_spectra_db(path, spectra: Sequence[Sequence], random_seed=None):
     )
 
 
-def read_spectra_range_db(path, spectra_from, spectra_to, logger, random_seed=None):
+def read_spectra_range_db(path, spectra_from, spectra_to, only_pairs, logger, random_seed=None):
     db_user, db_pass, db_host, db_port, db_db, rs_ids = parse_db_path(path)
     db = _get_db(
         username=db_user,
@@ -174,7 +179,7 @@ def read_spectra_range_db(path, spectra_from, spectra_to, logger, random_seed=No
         resultset_ids=rs_ids,
         spectra_from=spectra_from[0],
         spectra_to=spectra_to[0],
-        only_pairs=True,
+        only_pairs=only_pairs,
     )
 
 
@@ -195,7 +200,9 @@ def read_spectra_parquet(path, spectra: Sequence[Sequence], spectra_cols: Sequen
 def read_spectra_range_parquet(path,
                                spectra_from,
                                spectra_to,
-                               spectra_cols: Sequence):
+                               spectra_cols: Sequence,
+                               sequence_p2_col='sequence_p2',
+                               only_pairs=True):
     # Filters for spectrum columns
     parquet_file = FPParquetFile(path)
     res_df = pd.DataFrame()
@@ -207,6 +214,10 @@ def read_spectra_range_parquet(path,
             (df[spectra_cols].apply(lambda r: tuple(r), axis=1) >= tuple(spectra_from)) &
             (df[spectra_cols].apply(lambda r: tuple(r), axis=1) <= tuple(spectra_to))
         )
+        # Filter out linear matches
+        if only_pairs:
+            filters &= ~df[sequence_p2_col].isna()
+            filters &= df[sequence_p2_col] != ''
         # Append row group
         res_df = pd.concat(
             [
@@ -242,6 +253,8 @@ def read_spectra_range_csv(path,
                            spectra_from,
                            spectra_to,
                            spectra_cols: Sequence,
+                           sequence_p2_col='sequence_p2',
+                           only_pairs=True,
                            sep=',',
                            chunksize=500_000):
     # Initialize result DataFrame
@@ -252,6 +265,10 @@ def read_spectra_range_csv(path,
             (df[spectra_cols].apply(lambda r: tuple(r), axis=1) >= tuple(spectra_from)) &
             (df[spectra_cols].apply(lambda r: tuple(r), axis=1) <= tuple(spectra_to))
         )
+        # Filter out linear matches
+        if only_pairs:
+            filters &= ~df[sequence_p2_col].isna()
+            filters &= df[sequence_p2_col] != ''
         # Append filtered chunk
         res_df = pd.concat(
             [
@@ -291,24 +308,46 @@ def parse_db_path(path):
     return db_user, db_pass, db_host, db_port, db_db, rs_ids
 
 
-def read_top_sample(input_data,
-                    sample=1_000_000,
-                    top_ranking_col='top_ranking',
-                    logger=None,
-                    random_seed=None):
+def read_sample(input_data,
+                sample=1_000_000,
+                top_ranking_col='top_ranking',
+                sequence_p2_col='sequence_p2',
+                logger=None,
+                only_top_ranking=False,
+                only_pairs=True,
+                random_seed=None):
     if type(input_data) is pd.DataFrame:
+        filter = np.repeat(True, repeats=len(input_data))
+        if only_top_ranking:
+            filter &= input_data[top_ranking_col]
+        if only_pairs:
+            filter &= ~input_data[sequence_p2_col].isna()
+            filter &= input_data[sequence_p2_col] != ''
         sample_min = min(
-            len(input_data[input_data[top_ranking_col]]),
+            len(input_data[filter]),
             sample
         )
-        return input_data[
-            input_data[top_ranking_col]
-        ].sample(sample_min)
+        return input_data[filter].sample(sample_min)
     file_type = get_source_type(input_data)
     if file_type == 'csv':
-        return read_top_sample_csv(input_data, sample=sample, top_ranking_col=top_ranking_col)
+        return read_sample_csv(
+            input_data,
+            sample=sample,
+            top_ranking_col=top_ranking_col,
+            sequence_p2_col=sequence_p2_col,
+            only_top_ranking=only_top_ranking,
+            only_pairs=only_pairs,
+        )
     if file_type == 'tsv':
-        return read_top_sample_csv(input_data, sep='\t', sample=sample, top_ranking_col=top_ranking_col)
+        return read_sample_csv(
+            input_data,
+            sep='\t',
+            sample=sample,
+            top_ranking_col=top_ranking_col,
+            only_top_ranking=only_top_ranking,
+            sequence_p2_col=sequence_p2_col,
+            only_pairs=only_pairs,
+        )
     if file_type == 'db':
         db_user, db_pass, db_host, db_port, db_db, rs_ids = parse_db_path(input_data)
         db = _get_db(
@@ -322,28 +361,43 @@ def read_top_sample(input_data,
         )
         return db.read_resultsets(
             resultset_ids=rs_ids,
-            only_pairs=True,
-            only_top_ranking=True,
+            only_pairs=only_pairs,
+            only_top_ranking=only_top_ranking,
             sample=sample,
         )
     if file_type == 'parquet':
-        return read_top_sample_parquet(input_data, sample=sample, top_ranking_col=top_ranking_col)
+        return read_sample_parquet(
+            input_data,
+            sample=sample,
+            sequence_p2_col=sequence_p2_col,
+            only_top_ranking=only_top_ranking,
+            top_ranking_col=top_ranking_col,
+            only_pairs=only_pairs,
+        )
 
 
-def read_top_sample_parquet(path: str,
-                            sample: int,
-                            top_ranking_col='top_ranking',
-                            batch_size=500_000,
-                            random_state=random.randint(0, 2**32-1)):
+def read_sample_parquet(path: str,
+                        sample: int,
+                        top_ranking_col='top_ranking',
+                        sequence_p2_col='sequence_p2',
+                        batch_size=500_000,
+                        only_top_ranking=False,
+                        only_pairs=True,
+                        random_state=random.randint(0, 2**32-1)):
     parquet_file = PAParquetDataset(path)
     n_parts = 0
     for f in parquet_file.fragments:
         f: pyarrow.dataset.ParquetFileFragment
         n_parts += f.num_row_groups
     res_df = pd.DataFrame()
-    top_filter = pc.field(top_ranking_col)
+    filter = pc.scalar(True)
+    if only_top_ranking:
+        filter &= pc.field(top_ranking_col)
+    if only_pairs:
+        filter &= ~pc.is_null(pc.field(sequence_p2_col))
+        filter &= pc.not_equal(pc.field(sequence_p2_col), '')
     for frag in parquet_file.fragments:
-        for batch in frag.to_batches(filter=top_filter, batch_size=batch_size):
+        for batch in frag.to_batches(filter=filter, batch_size=batch_size):
             df = batch.to_pandas()
             df: pd.DataFrame
             n_group_samples = min(
@@ -359,19 +413,26 @@ def read_top_sample_parquet(path: str,
     return res_df.reset_index(drop=True)
 
 
-def read_top_sample_csv(path,
-                        sample,
-                        sep=',',
-                        chunksize=5_000_000,
-                        top_ranking_col='top_ranking',
-                        random_state=random.randint(0, 2**32-1)):
+def read_sample_csv(path,
+                    sample,
+                    sep=',',
+                    chunksize=5_000_000,
+                    top_ranking_col='top_ranking',
+                    sequence_p2_col='sequence_p2',
+                    only_pairs=True,
+                    only_top_ranking=False,
+                    random_state=random.randint(0, 2**32-1)):
     n_rows = sum(1 for _ in open(path, 'rb'))
     n_chunks = ceil(n_rows / sample)
     res_df = pd.DataFrame()
     for i_chunk, df in enumerate(pd.read_csv(path, sep=sep, chunksize=chunksize)):
-        df = df[
-            df[top_ranking_col]
-        ]
+        filter = np.repeat(True, repeats=len(df))
+        if only_top_ranking:
+            filter &= df[top_ranking_col]
+        if only_pairs:
+            filter &= ~df[sequence_p2_col].isna()
+            filter &= df[sequence_p2_col] != ''
+        df = df[filter]
         res_df = pd.concat([
             res_df,
             df
