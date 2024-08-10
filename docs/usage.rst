@@ -24,6 +24,16 @@ The available options and default values can be found under :ref:`options`.
   The first think you probably want to configure are the input columns required. Notice that some columns can be derived by others if not provided.
   However, providing them might increase performance.
 
+------
+Output
+------
+
+After rescoring the result will contain all original columns plus a new score with default name ``rescore`` and
+subscores ``rescore_{i}`` for every ``i``'th k-fold cross-validation model. Futhermore, the result will contain a column
+``rescore_slice`` that indicates which model has been used for rescoring in case of a training sample and a column
+``rescore_top_ranking`` indicating if a model is the top ranking model for the given spectrum. The base name ``rescore``
+can be configured in the :ref:`options`.
+
 -----------------
 DataFrame example
 -----------------
