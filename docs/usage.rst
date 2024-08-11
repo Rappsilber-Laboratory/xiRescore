@@ -30,9 +30,10 @@ Output
 
 After rescoring the result will contain all original columns plus a new score with default name ``rescore`` and
 subscores ``rescore_{i}`` for every ``i``'th k-fold cross-validation model. Futhermore, the result will contain a column
-``rescore_slice`` that indicates which model has been used for rescoring in case of a training sample and a column
-``rescore_top_ranking`` indicating if a model is the top ranking model for the given spectrum. The base name ``rescore``
-can be configured in the :ref:`options`.
+``rescore_slice`` that indicates which model has been used for rescoring in case of a training sample, a column
+``rescore_top_ranking`` indicating if a match is the top ranking match for the given spectrum and a column
+``rescore_rank`` indicating which rank a match has for the according spectrum. The base name ``rescore`` can be
+configured in the :ref:`options`.
 
 -----------------
 DataFrame example
