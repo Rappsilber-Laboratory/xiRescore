@@ -89,7 +89,11 @@ def parse_db_path(path):
     return db_user, db_pass, db_host, db_port, db_db
 
 
-def append_db(output, df: pd.DataFrame, options, logger=None, random_seed=random.randint(0, 2**32-1)):
+def append_db(output,
+              df: pd.DataFrame,
+              options,
+              logger=None,
+              random_seed=random.randint(0, 2**32-1)):
     col_rescore = options['output']['columns']['rescore']
 
     db_user, db_pass, db_host, db_port, db_db = parse_db_path(output)
@@ -125,4 +129,10 @@ def append_db(output, df: pd.DataFrame, options, logger=None, random_seed=random
         logger.info(f'Create resultset `{resultset_id}`')
     else:
         resultset_id = last_resultset_id_written
-    db.write_resultmatches(df, feature_cols=cols_scores, resultset_id=resultset_id)
+    rescore_base_name = options['output']['columns']['rescore']
+    db.write_resultmatches(
+        df,
+        feature_cols=cols_scores,
+        resultset_id=resultset_id,
+        top_ranking_col=f'{rescore_base_name}_top_ranking'
+    )

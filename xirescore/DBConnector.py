@@ -648,7 +648,7 @@ class DBConnector:
         return resultset_id
 
 
-    def write_resultset(self, df, feature_cols, resultset_id=None, main_score_idx=0, config=''):
+    def write_resultset(self, df, feature_cols, top_ranking_col='top_ranking', resultset_id=None, main_score_idx=0, config=''):
         global last_resultset_id_written
         tables = self._get_tables()
         if resultset_id is None:
@@ -658,6 +658,7 @@ class DBConnector:
 
         df['source_resultset_id'] = df['resultset_id']
         df['resultset_id'] = resultset_id
+        df['top_ranking'] = df[top_ranking_col]
         df = df.replace({np.nan: None})
         resultset_names = df['resultset_name'].sort_values().drop_duplicates().to_list()
         resultset_name = ';'.join(resultset_names)
@@ -707,12 +708,13 @@ class DBConnector:
 
         return uuid.UUID(resultset_id)
 
-    def write_resultmatches(self, df, resultset_id, feature_cols):
+    def write_resultmatches(self, df, resultset_id, feature_cols, top_ranking_col='top_ranking'):
         rm_columns = [
             c.name for c in self.meta.tables['resultmatch'].c
         ]
         rm_df_columns = [c for c in rm_columns if c != 'scores']
-        rm_df = df.loc[:, rm_df_columns]
+        rm_df = df.loc[:, rm_df_columns].copy()
+        rm_df['top_ranking'] = df[top_ranking_col]
         rm_df['scores'] = df[
             feature_cols
         ].astype(float).apply(
