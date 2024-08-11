@@ -647,67 +647,6 @@ class DBConnector:
 
         return resultset_id
 
-
-    def write_resultset(self, df, feature_cols, top_ranking_col='top_ranking', resultset_id=None, main_score_idx=0, config=''):
-        global last_resultset_id_written
-        tables = self._get_tables()
-        if resultset_id is None:
-            resultset_id = self._get_tailing_uuid()
-            last_resultset_id_written = resultset_id
-        self.logger.info(f"Resultset ID: {resultset_id}")
-
-        df['source_resultset_id'] = df['resultset_id']
-        df['resultset_id'] = resultset_id
-        df['top_ranking'] = df[top_ranking_col]
-        df = df.replace({np.nan: None})
-        resultset_names = df['resultset_name'].sort_values().drop_duplicates().to_list()
-        resultset_name = ';'.join(resultset_names)
-        resultset_name = f'xiRescore({resultset_name})'
-
-        rstype_id = self._get_rstype_id()
-
-        scorename_df = pd.DataFrame(
-            list(enumerate(feature_cols)),
-            columns=['score_id', 'name']
-        ).assign(
-            resultset_id=resultset_id,
-            primary_score=True,
-            higher_is_better=True,
-        )
-
-        rs_query = insert(
-            tables['resultset']
-        ).values({
-            'id': resultset_id,
-            'name': resultset_name,
-            'main_score': main_score_idx,
-            'rstype_id': rstype_id,
-            'config': config,
-        })
-
-        sn_query = insert(
-            tables['scorename']
-        ).values(
-            scorename_df.to_dict(orient='records')
-        )
-
-        rsrch_query = insert(tables['resultsearch']).values(
-            df[['search_id', 'resultset_id']].drop_duplicates().to_dict(orient='records')
-        )
-
-        with self.engine.connect() as conn:
-            self.logger.debug("Create resultset")
-            conn.execute(rs_query)
-            self.logger.debug("Create scorenames")
-            conn.execute(sn_query)
-            self.logger.debug("Create resultsearches")
-            conn.execute(rsrch_query)
-            conn.commit()
-
-        self.write_resultmatches(df, resultset_id, feature_cols)
-
-        return uuid.UUID(resultset_id)
-
     def write_resultmatches(self, df, resultset_id, feature_cols, top_ranking_col='top_ranking'):
         rm_columns = [
             c.name for c in self.meta.tables['resultmatch'].c
