@@ -342,7 +342,7 @@ class XiRescore:
 
         # Calculate top_ranking
         self._logger.info('Calculate top ranking scores')
-^        df_top_rank = df_scores.groupby(cols_spectra).agg(
+        df_top_rank = df_scores.groupby(cols_spectra).agg(
             max=(f'{col_rescore}', 'max'),
             min=(f'{col_rescore}', 'min'),
         ).rename(
