@@ -62,6 +62,7 @@ requirements_test = [
     "pytest-flake8~=1.0.6",
     "pytest-pydocstyle~=2.3.2",
     "flake8==4.0.1",
+    "pytest-xdist",
 ]
 
 requirements_docs = [
