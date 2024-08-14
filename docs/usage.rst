@@ -21,7 +21,7 @@ such that all existing default values or arrays are replaces. A special case are
 The available options and default values can be found under :ref:`options`.
 
 .. note::
-  The first think you probably want to configure are the input columns required. Notice that some columns can be derived by others if not provided.
+  The first thing you probably want to configure are the input columns required. Notice that some columns can be derived by others if not provided.
   However, providing them might increase performance.
 
 ------
