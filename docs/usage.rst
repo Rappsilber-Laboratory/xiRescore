@@ -11,7 +11,7 @@ XiRescore can be used in different ways. First of all, there are different optio
 
 Secondly there are different ways of calling xiRescore: Either as a Python module in code or via CLI (see examples).
 
-To use XiRescore in Python code use the XiRescore class:
+To use xiRescore in Python code use the XiRescore class:
 
 .. autoclass:: xirescore.XiRescore::XiRescore
    :no-index:
