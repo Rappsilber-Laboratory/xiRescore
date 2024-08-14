@@ -317,10 +317,10 @@ class XiRescore:
 
         self._logger.info('Merge slice info into batch')
         df_scores['__index_backup__'] = df_scores.index
-        df_scores = df_scores.merge(
-            df_slice,
+        df_scores = df_slice.merge(
+            df_scores,
             on=cols_merge,
-            how='left',
+            how='right',
             validate='1:1',
         )
         df_scores.loc[

@@ -84,7 +84,8 @@ def rescore(models,
         ]
         df_rescore[f'{rescore_col}_{i_m}'] = np.concatenate(rescores_m)
 
-    # Calculate mean score
+    # Calculate mean score and standard deviation
     df_rescore[rescore_col] = df_rescore.apply(np.mean, axis=1)
+    df_rescore[f'{rescore_col}_std'] = df_rescore.apply(np.std, axis=1)
 
     return df_rescore
