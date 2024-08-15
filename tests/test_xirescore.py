@@ -2,7 +2,7 @@
 
 """Tests for `xirescore` package."""
 import random
-
+import sys
 import pandas as pd
 import pytest
 import logging
@@ -329,8 +329,10 @@ def test_full_cli_parquet_rescoring():
             }
         }
 
+        python_version = f'{sys.version_info.major}.{sys.version_info.minor}'
         result = subprocess.run(
             [
+                f'python{python_version}',
                 'xirescore',
                 '-i', './tests/fixtures/test_data.parquet',
                 '-o', f'{tmpdirname}/result.parquet',
