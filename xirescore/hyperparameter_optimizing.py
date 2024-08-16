@@ -14,7 +14,7 @@ from sklearn.metrics import accuracy_score, balanced_accuracy_score
 import copy
 
 
-def get_hyperparameters(train_df, cols_features, options,
+def get_hyperparameters(train_df, cols_features, splits, options,
                         logger: logging.Logger = None, loglevel=logging.DEBUG):
     # Create new logger or create child logger from existing one
     if logger is None:
@@ -53,20 +53,21 @@ def get_hyperparameters(train_df, cols_features, options,
     # Get the list of hyperparameter configurations
     hyperparam_grid = list(ParameterGrid(options['rescoring']['model_params']))
 
-    # Get non peptide overlapping k-fold splits
-    kf = NoOverlapKFold(
-        n_splits,
-        random_state=seed,
-        shuffle=True,
-        pep1_id_col=options['input']['columns']['base_sequence_p1'],
-        pep2_id_col=options['input']['columns']['base_sequence_p2'],
-        target_col=col_label,
-        logger=logger,
-    )
-    splits = kf.splits_by_peptides(
-        df=train_df,
-        pepseqs=pepseq_df
-    )
+    if splits is None:
+        # Get non peptide overlapping k-fold splits
+        kf = NoOverlapKFold(
+            n_splits,
+            random_state=seed,
+            shuffle=True,
+            pep1_id_col=options['input']['columns']['base_sequence_p1'],
+            pep2_id_col=options['input']['columns']['base_sequence_p2'],
+            target_col=col_label,
+            logger=logger,
+        )
+        splits = kf.splits_by_peptides(
+            df=train_df,
+            pepseqs=pepseq_df
+        )
 
     max_jobs = options['rescoring']['max_jobs']
     if max_jobs < 1:

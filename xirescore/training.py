@@ -13,7 +13,7 @@ import sklearn
 from sklearn.metrics import accuracy_score, balanced_accuracy_score
 
 
-def train(train_df, cols_features, clf_params, options,
+def train(train_df, cols_features, clf_params, options, splits=None,
           logger: logging.Logger = None, loglevel=logging.DEBUG):
     # Create new logger or create child logger from existing one
     if logger is None:
@@ -49,20 +49,21 @@ def train(train_df, cols_features, clf_params, options,
     seed = options['rescoring']['random_seed']
     n_splits = options['rescoring']['n_splits']
 
-    # Get non peptide overlapping k-fold splits
-    kf = NoOverlapKFold(
-        n_splits,
-        pep1_id_col=options['input']['columns']['base_sequence_p1'],
-        pep2_id_col=options['input']['columns']['base_sequence_p2'],
-        target_col=col_label,
-        random_state=seed,
-        shuffle=True,
-        logger=logger
-    )
-    splits = kf.splits_by_peptides(
-        df=train_df,
-        pepseqs=pepseq_df
-    )
+    if splits is None:
+        # Get non peptide overlapping k-fold splits
+        kf = NoOverlapKFold(
+            n_splits,
+            pep1_id_col=options['input']['columns']['base_sequence_p1'],
+            pep2_id_col=options['input']['columns']['base_sequence_p2'],
+            target_col=col_label,
+            random_state=seed,
+            shuffle=True,
+            logger=logger
+        )
+        splits = kf.splits_by_peptides(
+            df=train_df,
+            pepseqs=pepseq_df
+        )
 
     max_jobs = options['rescoring']['max_jobs']
     if max_jobs < 1:

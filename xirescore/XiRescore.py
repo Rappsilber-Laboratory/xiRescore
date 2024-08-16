@@ -128,12 +128,16 @@ class XiRescore:
         self.train()
         self.rescore()
 
-    def train(self, train_df: pd.DataFrame = None):
+    def train(self,
+              train_df: pd.DataFrame = None,
+              splits: list[tuple[pd.Index, pd.Index]] = None):
         """
         Run training on input data or on the passed DataFrame if provided.
 
         :param train_df: Data to be used training instead of input data.
         :type train_df: DataFrame, optional
+        :param splits: K-fold splits for manual ``train_df``.
+        :type splits: Index, optional
         """
         self._logger.info('Start training')
 
@@ -144,6 +148,7 @@ class XiRescore:
                 self._logger
             )
         else:
+            self.train_df = train_df
             self.scaler = get_scaler(train_df, self._options, self._logger)
 
         self.train_features = get_features(self.train_df, self._options, self._logger)
@@ -157,6 +162,7 @@ class XiRescore:
         model_params = get_hyperparameters(
             train_df=self.train_df,
             cols_features=self.train_features,
+            splits=splits,
             options=self._options,
             logger=self._logger,
             loglevel=self._loglevel,
@@ -167,6 +173,7 @@ class XiRescore:
             train_df=self.train_df,
             cols_features=self.train_features,
             clf_params=model_params,
+            splits=splits,
             logger=self._logger,
             options=self._options,
         )
