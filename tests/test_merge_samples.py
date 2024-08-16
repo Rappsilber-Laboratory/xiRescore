@@ -64,10 +64,12 @@ def test_merge_samples():
         }
     }
     with tempfile.TemporaryDirectory(prefix='pytest_xirescore_') as tmpdirname:
+        # Add linear matches
         df_plus_linear = pd.concat([
             df,
-            df.sample(1_000).assign(base_sequence_p2=None)
-        ]).copy()
+            df.sample(100_000).assign(base_sequence_p2=None)
+        ]).sample(frac=1, ignore_index=True).reset_index(drop=True).copy()
+        # Write DF to disk
         df_plus_linear.to_csv(f'{tmpdirname}/input.csv.gz')
         rescorer = XiRescore(
             input_path=f'{tmpdirname}/input.csv.gz',
