@@ -73,7 +73,7 @@ requirements_docs = [
 setup(
     author="Falk Boudewijn Schimweg",
     author_email='git@falk.schimweg.de',
-    python_requires='>=3.8',
+    python_requires='>=3.9',
     use_scm_version=True,
     setup_requires=['setuptools_scm'],
     classifiers=[
@@ -82,6 +82,7 @@ setup(
         'License :: OSI Approved :: GNU Affero General Public License v3 or later (AGPLv3+)',
         'Natural Language :: English',
         'Programming Language :: Python :: 3',
+        'Programming Language :: Python :: 3.9',
         'Programming Language :: Python :: 3.10',
         'Programming Language :: Python :: 3.12',
     ],
