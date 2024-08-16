@@ -64,7 +64,11 @@ def test_merge_samples():
         }
     }
     with tempfile.TemporaryDirectory(prefix='pytest_xirescore_') as tmpdirname:
-        df.to_csv(f'{tmpdirname}/input.csv.gz')
+        df_plus_linear = pd.concat([
+            df,
+            df.sample(1_000).assign(base_sequence_p2=None)
+        ]).copy()
+        df_plus_linear.to_csv(f'{tmpdirname}/input.csv.gz')
         rescorer = XiRescore(
             input_path=f'{tmpdirname}/input.csv.gz',
             output_path=f'{tmpdirname}/output.csv.gz',

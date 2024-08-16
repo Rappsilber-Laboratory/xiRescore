@@ -14,6 +14,7 @@ import pyarrow
 from math import ceil
 import multiprocess as mp
 from time import sleep
+from typing import Union
 
 
 _dbs = dict()
@@ -86,7 +87,7 @@ def read_spectra_ids(path, spectra_cols=None, logger=None, random_seed=None) -> 
             .to_records(index=False)
 
 
-def read_spectra_range(input: str | pd.DataFrame,
+def read_spectra_range(input: Union[str, pd.DataFrame],
                        spectra_from: Sequence[Sequence],
                        spectra_to: Sequence[Sequence],
                        spectra_cols: Sequence = None,
