@@ -19,6 +19,7 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.base import BaseEstimator, TransformerMixin
 from collections.abc import Collection
 import copy
+from xirescore.column_generating import generate as generate_columns
 
 options_merger = Merger(
     # pass in a list of tuple, with the
@@ -148,8 +149,11 @@ class XiRescore:
                 self._logger
             )
         else:
-            self.train_df = train_df
+            self.train_df = generate_columns(train_df, options=self._options, do_fdr=True, do_self_between=True)
             self.scaler = get_scaler(train_df, self._options, self._logger)
+
+        if splits is not None:
+            self.splits = splits
 
         self.train_features = get_features(self.train_df, self._options, self._logger)
 
