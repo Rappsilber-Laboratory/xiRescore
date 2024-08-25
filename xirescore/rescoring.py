@@ -1,10 +1,12 @@
 import multiprocess as mp
 from math import ceil
+import logging
+
 import numpy as np
 import pandas as pd
-from xirescore import async_result_resolving
 import scipy
-import logging
+
+from xirescore import async_result_resolving
 
 
 def rescore(models,

@@ -1,17 +1,17 @@
 from typing import Callable
-
-from sklearn.model_selection import ParameterGrid
+from functools import partial
+import logging
 import importlib
 import multiprocess as mp
-from xirescore.NoOverlapKFold import NoOverlapKFold
-import logging
+
 import numpy as np
-from sklearn.base import ClassifierMixin
-from functools import partial
-from xirescore import async_result_resolving
 import sklearn
+from sklearn.base import ClassifierMixin
 from sklearn.metrics import accuracy_score, balanced_accuracy_score
-import copy
+from sklearn.model_selection import ParameterGrid
+
+from xirescore import async_result_resolving
+from xirescore.NoOverlapKFold import NoOverlapKFold
 
 
 def get_hyperparameters(train_df, cols_features, splits, options,

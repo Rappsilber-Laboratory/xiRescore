@@ -1,25 +1,25 @@
 """Main module."""
-from xirescore._default_options import default_options
+import copy
+import logging
+import random
+from collections.abc import Collection
+from math import ceil
+
+import numpy as np
+import pandas as pd
+from deepmerge import Merger
+from sklearn.base import BaseEstimator, TransformerMixin
+
+from xirescore import readers
+from xirescore import rescoring
 from xirescore import train_data_selecting
 from xirescore import training
-from xirescore import readers
 from xirescore import writers
-from xirescore import rescoring
+from xirescore._default_options import default_options
+from xirescore.column_generating import generate as generate_columns
 from xirescore.feature_extracting import get_features
 from xirescore.feature_scaling import get_scaler
 from xirescore.hyperparameter_optimizing import get_hyperparameters
-
-import pandas as pd
-import numpy as np
-from deepmerge import Merger
-import logging
-import random
-from math import ceil
-from sklearn.preprocessing import StandardScaler
-from sklearn.base import BaseEstimator, TransformerMixin
-from collections.abc import Collection
-import copy
-from xirescore.column_generating import generate as generate_columns
 
 options_merger = Merger(
     # pass in a list of tuple, with the

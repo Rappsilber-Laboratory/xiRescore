@@ -1,9 +1,10 @@
+from logging import Logger
+
 from sklearn.base import ClassifierMixin
-from sklearn.preprocessing import StandardScaler
 from sklearn import preprocessing
 import pandas as pd
+
 from xirescore.feature_extracting import get_features
-from logging import Logger
 
 
 def get_scaler(df: pd.DataFrame, options: dict, logger: Logger):

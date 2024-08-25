@@ -1,7 +1,12 @@
 """
 Connector for xiSearch2 databases
 """
+import io
 import logging
+import uuid
+import random
+from math import ceil
+from datetime import datetime
 
 from sqlalchemy import (
     create_engine,
@@ -15,15 +20,11 @@ from sqlalchemy import (
     cast,
     String,
 )
-import io
 import psycopg2
 import pandas as pd
 import numpy as np
-import uuid
-from datetime import datetime
-import random
+
 from xirescore.df_serializing import serialize_columns
-from math import ceil
 
 _TABLES = [
     'resultset',

@@ -2,19 +2,18 @@
 Readers for data inputs
 """
 import random
+from math import ceil
+from typing import Union
+from collections.abc import Sequence
 
 import numpy as np
 import pandas as pd
-from xirescore.DBConnector import DBConnector
-from collections.abc import Sequence
 from fastparquet import ParquetFile as FPParquetFile
 from pyarrow.parquet import ParquetDataset as PAParquetDataset
 import pyarrow.compute as pc
 import pyarrow
-from math import ceil
-import multiprocess as mp
-from time import sleep
-from typing import Union
+
+from xirescore.DBConnector import DBConnector
 
 
 _dbs = dict()

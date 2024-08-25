@@ -1,9 +1,11 @@
+import logging
+
 import pandas as pd
+import numpy as np
+
 from xirescore import readers
 from xirescore.column_generating import generate as generate_columns
 from xirescore.feature_scaling import get_scaler
-import logging
-import numpy as np
 
 
 def select(input_data, options, logger):

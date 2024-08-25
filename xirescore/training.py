@@ -1,16 +1,14 @@
 from typing import Callable
-
-from sklearn.model_selection import ParameterGrid
 import importlib
-import multiprocess as mp
-from xirescore.NoOverlapKFold import NoOverlapKFold
 import logging
-import numpy as np
+
 from sklearn.base import ClassifierMixin
-from functools import partial
-from xirescore import async_result_resolving
 import sklearn
 from sklearn.metrics import accuracy_score, balanced_accuracy_score
+import multiprocess as mp
+
+from xirescore import async_result_resolving
+from xirescore.NoOverlapKFold import NoOverlapKFold
 
 
 def train(train_df, cols_features, clf_params, options, splits=None,

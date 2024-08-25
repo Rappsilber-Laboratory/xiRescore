@@ -1,11 +1,11 @@
-from functools import partial
-import numpy as np
-import pandas as pd
-import multiprocess as mp
 import os
+from functools import partial
+import multiprocess as mp
 from math import ceil
 from time import sleep
+
 import pandas as pd
+import numpy as np
 
 
 def self_or_between(df,

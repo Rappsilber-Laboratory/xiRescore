@@ -1,13 +1,14 @@
-from xirescore.XiRescore import XiRescore
-import xirescore
-
 import argparse
 import yaml
 import ast
 import logging
-import logging_loki
 import os
 import sys
+
+import logging_loki
+
+from xirescore.XiRescore import XiRescore
+import xirescore
 
 
 def main():

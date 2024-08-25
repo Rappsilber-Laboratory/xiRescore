@@ -1,10 +1,11 @@
 import random
+import re
+import logging
+
 import networkx
 import pandas as pd
 import numpy as np
-import logging
 import networkx as nx
-import re
 
 class NoOverlapKFold:
     def __init__(self, n_splits: int = 5, shuffle: bool = False, random_state: int = 42,

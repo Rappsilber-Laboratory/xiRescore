@@ -1,6 +1,7 @@
 from collections.abc import Iterable
-import numpy as np
 import uuid
+
+import numpy as np
 
 
 def serialize_columns(df):

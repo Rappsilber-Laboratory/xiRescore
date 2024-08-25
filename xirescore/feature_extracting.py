@@ -1,6 +1,7 @@
+from logging import Logger
+
 import numpy as np
 import pandas as pd
-from logging import Logger
 
 
 def get_features(df: pd.DataFrame, options: dict, logger: Logger):

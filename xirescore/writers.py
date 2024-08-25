@@ -1,14 +1,16 @@
 """
 Writers for data outputs
 """
-import fastparquet
-import pandas as pd
-from xirescore.DBConnector import DBConnector
 from pathlib import Path
-from xirescore.readers import get_source_type
-from xirescore.df_serializing import serialize_columns
 import random
 import os
+
+import fastparquet
+import pandas as pd
+
+from xirescore.readers import get_source_type
+from xirescore.df_serializing import serialize_columns
+from xirescore.DBConnector import DBConnector
 
 
 _dbs = dict()
