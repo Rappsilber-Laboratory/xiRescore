@@ -5,6 +5,7 @@ xiRescore
 
 .. image:: https://img.shields.io/pypi/v/xirescore.svg
         :target: https://pypi.python.org/pypi/xirescore
+        :alt: PyPI - Package Version
 
 .. image:: https://img.shields.io/pypi/pyversions/xirescore
         :target: https://pypi.python.org/pypi/xirescore
