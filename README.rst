@@ -3,7 +3,7 @@ xiRescore
 =========
 
 
-.. image:: https://img.shields.io/pypi/v/xirescore.svg
+.. image:: https://img.shields.io/pypi/v/xirescore
         :target: https://pypi.python.org/pypi/xirescore
         :alt: PyPI - Package Version
 
