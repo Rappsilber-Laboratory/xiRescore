@@ -19,6 +19,10 @@ xiRescore
         :target: https://github.com/Rappsilber-Laboratory/xiRescore/blob/main/LICENSE
         :alt: PyPI - License
 
+.. image:: https://img.shields.io/badge/DOI-todo-gray
+        :target: https://github.com/Rappsilber-Laboratory/xiRescore/
+        :alt: DOI
+
 
 
 A machine learning based approach to rescore crosslinked spectrum matches (CSMs).
