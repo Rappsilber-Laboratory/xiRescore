@@ -6,6 +6,10 @@ xiRescore
 .. image:: https://img.shields.io/pypi/v/xirescore.svg
         :target: https://pypi.python.org/pypi/xirescore
 
+.. image:: https://img.shields.io/pypi/pyversions/xirescore
+        :target: https://pypi.python.org/pypi/xirescore
+        :alt: PyPI - Python Version
+
 .. image:: https://readthedocs.org/projects/xirescore/badge/
         :target: https://xirescore.readthedocs.io/en/
         :alt: Documentation Status
