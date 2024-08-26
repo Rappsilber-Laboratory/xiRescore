@@ -14,6 +14,9 @@ xiRescore
         :target: https://xirescore.readthedocs.io/en/
         :alt: Documentation Status
 
+.. image:: https://img.shields.io/pypi/l/xirescore
+        :target: https://github.com/Rappsilber-Laboratory/xiRescore/blob/main/LICENSE
+        :alt: PyPI - License
 
 
 
