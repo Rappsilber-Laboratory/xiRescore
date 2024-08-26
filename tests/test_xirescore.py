@@ -30,7 +30,7 @@ def test_full_db_rescoring():
             }
         },
         'rescoring': {
-            'spectra_batch_size': 30_000
+            'spectra_batch_size': 10_000
         }
     }
     rescorer = XiRescore(
