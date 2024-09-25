@@ -118,7 +118,7 @@ def append_db(output,
         resultset_name_join = ';'.join(
             df['resultset_name'].drop_duplicates().values
         )
-        resultset_name = f'xiRescore'
+        resultset_name = f'xiRescore({resultset_name_join})'
         resultset_id = db.create_resultset(
             resultset_name,
             score_names=score_names,
