@@ -7,6 +7,7 @@ import pandas as pd
 import numpy as np
 import networkx as nx
 
+
 class NoOverlapKFold:
     def __init__(self, n_splits: int = 5, shuffle: bool = False, random_state: int = 42,
                  pep1_id_col: str = "base_sequence_p1", pep2_id_col: str = "base_sequence_p2",
