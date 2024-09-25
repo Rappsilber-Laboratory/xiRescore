@@ -44,7 +44,6 @@ class XiRescore:
                  input_path,
                  output_path=None,
                  options=dict(),
-                 state=None,
                  logger=None,
                  loglevel=logging.DEBUG):
         """
@@ -75,11 +74,8 @@ class XiRescore:
         seed = self._options['rescoring']['random_seed']
         self._true_random_seed = random.randint(0, 2**32-1)
         np.random.seed(seed)
-        random.seed(seed)
+        random.seed(seed)<y
 
-        if state is not None:
-            self.models = state['models']
-            self.splits = state['splits']
 
         # Store input data path
         self._input = input_path
