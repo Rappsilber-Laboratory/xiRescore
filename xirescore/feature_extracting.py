@@ -20,7 +20,7 @@ def get_features(df: pd.DataFrame, options: dict, logger: Logger):
     nan_features = [
         f
         for f in features
-        if (f not in absent_features) and any(np.isnan(df[f].values))
+        if (f not in absent_features) and any(pd.isna(df[f].values))
     ]
     features = [
         f
