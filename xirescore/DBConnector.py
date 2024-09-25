@@ -232,7 +232,7 @@ class DBConnector:
             validate='1:1'
         )
 
-        resultmatch_scores_df.drop('scores', inplace=True, axis=1)
+        resultmatch_scores_df.drop('scores', inplace=True, axis=1, errors='ignore')
 
         # Merge with peptide/protein information
         peptide_df = self._get_peptide_protein_df(search_ids)
