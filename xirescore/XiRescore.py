@@ -74,7 +74,7 @@ class XiRescore:
         seed = self._options['rescoring']['random_seed']
         self._true_random_seed = random.randint(0, 2**32-1)
         np.random.seed(seed)
-        random.seed(seed)<y
+        random.seed(seed)
 
 
         # Store input data path
