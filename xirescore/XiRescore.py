@@ -250,6 +250,7 @@ class XiRescore:
             df_batch = self.rescore_df(df_batch)
 
             # Store collected matches
+            self._logger.info('Write out batch')
             if type(self._output) is pd.DataFrame:
                 df_rescored = pd.concat([
                     df_rescored,
