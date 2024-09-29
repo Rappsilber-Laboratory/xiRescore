@@ -56,6 +56,8 @@ def main():
         options = dict()
 
     logger = logging.getLogger('xirescore')
+
+    # Configure Loki logger
     if args.loki is None:
         logging.basicConfig()
         logger.setLevel(logging.DEBUG)
@@ -70,6 +72,15 @@ def main():
         )
         logger.setLevel(logging.DEBUG)
         logger.addHandler(handler)
+
+    # Configure stdout logger
+    ch = logging.StreamHandler()
+    ch.setLevel(logging.DEBUG)
+    formatter = logging.Formatter(
+        '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+    )
+    ch.setFormatter(formatter)
+    logger.addHandler(ch)
 
     # Initialize XiRescore
     rescorer = XiRescore(
