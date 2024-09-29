@@ -140,10 +140,10 @@ def select(input_data, options, logger):
         logger.info(f'Taking {len(train_between_targets)} between targets below {fdr_cutoff} FDR')
 
         # Get capped decoy-x
-        all_taregt = df[filter_target]
+        all_target = df[filter_target]
         all_decoy = df[~filter_target]
         _, hist_bins = np.histogram(df[col_native_score], bins=1_000)
-        hist_tt, _ = np.histogram(all_taregt[col_native_score], bins=hist_bins)
+        hist_tt, _ = np.histogram(all_target[col_native_score], bins=hist_bins)
         hist_dx, _ = np.histogram(all_decoy[col_native_score], bins=hist_bins)
         hist_dx_capped = np.minimum(hist_dx, hist_tt)
 
