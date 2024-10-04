@@ -119,7 +119,7 @@ def select(input_data, options, logger):
         # Create filters
         filter_self = df[col_self_between] == val_self
         filter_fdr = df[col_fdr] <= fdr_cutoff
-        filter_target = df[col_target]
+        filter_target = df[col_target].astype(bool)
 
         # Max target size
         target_max = int(train_size_max / 2)

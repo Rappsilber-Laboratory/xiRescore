@@ -32,7 +32,7 @@ def train(train_df, cols_features, clf_params, options, splits=None,
     # Get DataFrames for peptide sequences, features and labels
     pepseq_df = train_df[cols_pepseq]
     features_df = train_df[cols_features]
-    labels_df = train_df[col_label]
+    labels_df = train_df[col_label].astype(bool)
 
     # Import model
     model_class = options['rescoring']['model_class']
